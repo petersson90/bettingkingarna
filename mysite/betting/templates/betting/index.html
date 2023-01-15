@@ -1,6 +1,6 @@
-{% if games_list %}
+{% if game_list %}
     <ul>
-    {% for game in games_list %}
+    {% for game in game_list %}
         <li><a href="{% url 'betting:detail' game.id %}">{{ game.home_team }} - {{ game.away_team }}</a></li>
     {% endfor %}
     </ul>
