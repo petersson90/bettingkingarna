@@ -10,8 +10,8 @@ class Team(models.Model):
 
 
 class Game(models.Model):
-    home_team = models.CharField(max_length=100)
-    away_team = models.CharField(max_length=100)
+    home_team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='home_games')
+    away_team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='away_games')
     start_time = models.DateTimeField()
     
     def __str__(self):
