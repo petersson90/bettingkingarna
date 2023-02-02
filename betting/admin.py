@@ -3,13 +3,15 @@ from .models import Team, Game, Bet
 
 # Register your models here.
 class TeamAdmin(admin.ModelAdmin):
-    list_display = ('name', 'short')
+    list_display = ('name', 'short', 'number_of_wins')
 
 admin.site.register(Team, TeamAdmin)
 
 
-class BetInline(admin.StackedInline):
+class BetInline(admin.TabularInline):
     model = Bet
+    fields = ('game', 'user', 'result')
+    readonly_fields = ('game', 'user', 'result')
     extra = 0
     
 class GameAdmin(admin.ModelAdmin):
@@ -24,4 +26,4 @@ class BetAdmin(admin.ModelAdmin):
     list_display = ('game', 'user', 'result', 'points')
     list_filter = ['user']
 
-admin.site.register(Bet, BetAdmin)
+# admin.site.register(Bet, BetAdmin)

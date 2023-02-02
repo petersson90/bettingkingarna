@@ -8,6 +8,16 @@ class Team(models.Model):
     
     def __str__(self):
         return f'{self.name}'
+    
+    def number_of_wins(self):
+        wins = 0
+        for game in self.home_games.all():
+            if game.home_goals > game.away_goals:
+                wins += 1
+        for game in self.away_games.all():
+            if game.away_goals > game.home_goals:
+                wins += 1
+        return wins
 
 
 class Game(models.Model):
@@ -23,7 +33,7 @@ class Game(models.Model):
     def result(self):
         return f'{self.home_goals}-{self.away_goals}'
     
-    def sign(self):
+    def threeway(self):
         if self.home_goals > self.away_goals:
             return '1'
         elif self.home_goals == self.away_goals:
@@ -33,18 +43,23 @@ class Game(models.Model):
 
 
 class Bet(models.Model):
-    game = models.ForeignKey(Game, on_delete=models.PROTECT)
+    game = models.ForeignKey(Game, on_delete=models.PROTECT, related_name='game_bets')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     home_goals = models.PositiveSmallIntegerField()
     away_goals = models.PositiveSmallIntegerField()
     
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'game'], name='one_bet_per_user_per_game')
+        ]
+    
     def __str__(self):
-        return f'{self.game}: {self.home_goals}-{self.away_goals}'
+        return f''
     
     def result(self):
         return f'{self.home_goals}-{self.away_goals}'
     
-    def sign(self):
+    def threeway(self):
         if self.home_goals > self.away_goals:
             return '1'
         elif self.home_goals == self.away_goals:
@@ -54,7 +69,7 @@ class Bet(models.Model):
     
     def points(self):
         points = 0
-        if self.sign() == self.game.sign():
+        if self.threeway() == self.game.threeway():
             points += 3
         if self.home_goals == self.game.home_goals:
             points += 1

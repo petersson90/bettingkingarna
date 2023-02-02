@@ -1,2 +1,21 @@
 <h1>{{ game }}</h1>
 <time datetime="{{ game.start_time }}">{{ game.start_time }}</time>
+<p>{{ game.home_goals }}-{{ game.away_goals }}</p>
+{% if game.game_bets.all %}
+<table>
+    <tr>
+        <th>Namn</th>
+        <th>Resultat</th>
+        <th>Poäng</th>
+    </tr>
+    {% for bet in game.game_bets.all %}
+    <tr>
+        <td>{{ bet.user }}</td>
+        <td>{{ bet.result }}</td>
+        <td>{{ bet.points }}</td>
+    <tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>Ingen har tippat på matchen än.</p>
+{% endif %}
