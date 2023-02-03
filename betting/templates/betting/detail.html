@@ -1,3 +1,7 @@
+{% extends "base.html" %}
+
+{% block content %}
+
 <h1>{{ game }}</h1>
 <time datetime="{{ game.start_time }}">{{ game.start_time }}</time>
 <p>{{ game.home_goals }}-{{ game.away_goals }}</p>
@@ -19,3 +23,5 @@
 {% else %}
 <p>Ingen har tippat på matchen än.</p>
 {% endif %}
+
+{% endblock %}

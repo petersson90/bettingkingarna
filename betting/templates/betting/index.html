@@ -1,3 +1,7 @@
+{% extends "base.html" %}
+
+{% block content %}
+
 <h1>Bettingkingarna</h1>
 {% if game_list %}
     <table>
@@ -17,3 +21,5 @@
 {% else %}
     <p>No games are available.</p>
 {% endif %}
+
+{% endblock %}
