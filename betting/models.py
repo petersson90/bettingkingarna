@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from datetime import datetime, timezone
 
 # Create your models here.
 class Team(models.Model):
@@ -30,10 +31,17 @@ class Game(models.Model):
     def __str__(self):
         return f'{self.home_team} - {self.away_team}'
     
+    def is_played(self):
+        return self.start_time < datetime.now(timezone.utc)
+    
     def result(self):
+        if self.home_goals is None or self.away_goals is None:
+            return None
         return f'{self.home_goals}-{self.away_goals}'
     
     def threeway(self):
+        if self.home_goals is None or self.away_goals is None:
+            return None
         if self.home_goals > self.away_goals:
             return '1'
         elif self.home_goals == self.away_goals:
@@ -47,6 +55,9 @@ class Bet(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     home_goals = models.PositiveSmallIntegerField()
     away_goals = models.PositiveSmallIntegerField()
+    # Hidden fields to keep track of creation and update time
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
     
     class Meta:
         constraints = [
@@ -54,7 +65,7 @@ class Bet(models.Model):
         ]
     
     def __str__(self):
-        return f''
+        return f'{self.user}: {self.result()}'
     
     def result(self):
         return f'{self.home_goals}-{self.away_goals}'
@@ -68,6 +79,8 @@ class Bet(models.Model):
             return '2'
     
     def points(self):
+        if not self.game.is_played():
+            return None
         points = 0
         if self.threeway() == self.game.threeway():
             points += 3

@@ -1,0 +1,12 @@
+{% extends 'betting/base.html' %}
+
+{% block content %}
+
+<form method="POST" action="">
+    {% csrf_token %}
+    <p>Är du säker på att du vill ta bort "{{ obj }}"?</p>
+    <p><a href="{{ request.META.HTTP_REFERER }}">Gå tillbaka</a></p>
+    <input type="submit" value="Bekräfta" />
+</form>
+
+{% endblock content %}
