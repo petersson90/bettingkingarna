@@ -4,7 +4,7 @@
 
 <h1>{{ game }}</h1>
 <time datetime="{{ game.start_time }}">{{ game.start_time }}</time>
-<p>{% if game.result %}{{ game.result }}{% endif %}</p>
+<p>{{ game.result|default_if_none:"-" }}</p>
 {% if game.game_bets.all %}
 <table>
     <tr>
@@ -17,7 +17,7 @@
     <tr>
         <td>{{ bet.user }}</td>
         <td>{{ bet.result }}</td>
-        <td>{{ bet.points }}</td>
+        <td>{{ bet.points|default_if_none:"-" }}</td>
         <td>{% if not game.is_played %}<a href="{% url 'betting:update-bet' bet.id %}">Ändra</a>{% endif %}</td>
         <td>{% if not game.is_played %}<a href="{% url 'betting:delete-bet' bet.id %}">Ta bort</a>{% endif %}</td>
     <tr>

@@ -14,7 +14,7 @@
         <tr>
             <td>{{ game.start_time }}</td>
             <td><a href="{% url 'betting:detail' game.id %}">{{ game }}</a></td>
-            <td>{{ game.result }}</td>
+            <td class="result">{{ game.result|default_if_none:"-" }}</td>
         </tr>
     {% endfor %}
     </table>
