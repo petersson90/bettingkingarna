@@ -22,8 +22,8 @@ class GameAdmin(admin.ModelAdmin):
 admin.site.register(Game, GameAdmin)
 
 
-class BetAdmin(admin.ModelAdmin):
-    list_display = ('game', 'user', 'result', 'points')
-    list_filter = ['user']
+# class BetAdmin(admin.ModelAdmin):
+#     list_display = ('game', 'user', 'result', 'points')
+#     list_filter = ['user']
 
 # admin.site.register(Bet, BetAdmin)

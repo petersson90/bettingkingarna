@@ -14,7 +14,9 @@
             <li><a href="{% url 'betting:index' %}">Startsida</a></li>
             {% if not request.user.is_authenticated %}
             <li><a href="{% url 'betting:login' %}">Logga in</a></li>
-            {% else %}            
+            {% else %}
+            <li><a href="{% url 'betting:create-team' %}">Skapa lag</a></li>
+            <li><a href="{% url 'betting:create-game' %}">Skapa match</a></li>
             <li><a href="{% url 'betting:logout' %}">Logga ut</a></li>
             {% endif %}
         </ul>

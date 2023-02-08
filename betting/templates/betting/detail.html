@@ -3,8 +3,11 @@
 {% block content %}
 
 <h1>{{ game }}</h1>
+<p>Hemmalag: {{ game.home_team }} <a href="{% url 'betting:update-team' game.home_team.id %}">Uppdatera lag</a></p>
+<p>Bortalag: {{ game.away_team }} <a href="{% url 'betting:update-team' game.away_team.id %}">Uppdatera lag</a></p>
 <time datetime="{{ game.start_time }}">{{ game.start_time }}</time>
 <p>{{ game.result|default_if_none:"-" }}</p>
+<p><a href="{% url 'betting:update-game' game.id %}">Uppdatera match</a></p>
 {% if game.bets.all %}
 <table>
     <tr>

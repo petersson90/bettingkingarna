@@ -1,12 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views import generic
-from .models import Game, Bet
+from .models import Team, Game, Bet
 from accounts.models import CustomUser
-from .forms import BetForm
+from .forms import TeamForm, GameForm, BetForm
 from datetime import datetime, timezone
 
 # Create your views here.    
@@ -65,6 +65,68 @@ def gameDetails(request, pk):
         
     context = {'game': game, 'form': form}
     return render(request, 'betting/detail.html', context)
+
+
+@login_required(login_url='betting:login')
+@permission_required('betting.add_game')
+def createGame(request):
+    form = GameForm()
+    
+    if request.method == 'POST':
+        form = GameForm(request.POST)
+        if form.is_valid:
+            form.save()
+            return redirect('betting:index')
+    
+    context = {'form': form}
+    return render(request, 'betting/base_form.html', context)
+
+
+@login_required(login_url='betting:login')
+@permission_required('betting.change_game')
+def updateGame(request, pk):
+    game = Game.objects.get(pk=pk)
+    form = GameForm(instance=game)
+    
+    if request.method == 'POST':
+        form = GameForm(request.POST, instance=game)
+        if form.is_valid:
+            form.save()
+            return redirect('betting:index')
+    
+    context = {'form': form}
+    return render(request, 'betting/base_form.html', context)
+
+
+@login_required(login_url='betting:login')
+@permission_required('betting.add_team')
+def createTeam(request):
+    form = TeamForm()
+    
+    if request.method == 'POST':
+        form = TeamForm(request.POST)
+        if form.is_valid:
+            form.save()
+            return redirect('betting:index')
+    
+    context = {'form': form}
+    return render(request, 'betting/base_form.html', context)
+
+
+@login_required(login_url='betting:login')
+@permission_required('betting.change_team')
+def updateTeam(request, pk):
+    team = Team.objects.get(pk=pk)
+    form = TeamForm(instance=team)
+    
+    if request.method == 'POST':
+        form = TeamForm(request.POST, instance=team)
+        if form.is_valid:
+            form.save()
+            return redirect('betting:index')
+    
+    context = {'form': form}
+    return render(request, 'betting/base_form.html', context)
 
 
 @login_required(login_url='betting:login')
