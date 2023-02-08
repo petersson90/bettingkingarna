@@ -4,9 +4,9 @@ from . import views
 
 app_name = 'betting'
 urlpatterns = [
-    path('', views.IndexView.as_view(), name='index'),
-    path('game/<int:pk>/', views.DetailView.as_view(), name='detail'),
-    path('create-bet/', views.createBet, name='create-bet'),
-    path('update-bet/<int:pk>/', views.updateBet, name='update-bet'),
-    path('delete-bet/<int:pk>/', views.deleteBet, name='delete-bet'),
+    path('login/', views.loginPage, name='login'),
+    path('logout/', views.logoutUser, name='logout'),
+    path('', views.gameList, name='index'),
+    path('game/<int:pk>/', views.gameDetails, name='detail'),
+    path('game/<int:game>/delete-bet/<int:pk>/', views.deleteBet, name='delete-bet'),
 ]

@@ -12,11 +12,23 @@
         {% block sidebar %}
         <ul>
             <li><a href="{% url 'betting:index' %}">Startsida</a></li>
+            {% if not request.user.is_authenticated %}
+            <li><a href="{% url 'betting:login' %}">Logga in</a></li>
+            {% else %}            
+            <li><a href="{% url 'betting:logout' %}">Logga ut</a></li>
+            {% endif %}
         </ul>
         {% endblock %}
     </div>
 
     <div id="content">
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags}}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
         {% block content %}{% endblock %}
     </div>
 </body>

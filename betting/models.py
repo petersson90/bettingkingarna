@@ -31,7 +31,7 @@ class Game(models.Model):
     def __str__(self):
         return f'{self.home_team} - {self.away_team}'
     
-    def is_played(self):
+    def has_started(self):
         return self.start_time < datetime.now(timezone.utc)
     
     def result(self):
@@ -51,7 +51,7 @@ class Game(models.Model):
 
 
 class Bet(models.Model):
-    game = models.ForeignKey(Game, on_delete=models.PROTECT, related_name='game_bets')
+    game = models.ForeignKey(Game, on_delete=models.PROTECT, related_name='bets')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     home_goals = models.PositiveSmallIntegerField()
     away_goals = models.PositiveSmallIntegerField()
@@ -65,7 +65,7 @@ class Bet(models.Model):
         ]
     
     def __str__(self):
-        return f'{self.user}: {self.result()}'
+        return f'{self.game}: {self.result()}'
     
     def result(self):
         return f'{self.home_goals}-{self.away_goals}'
@@ -79,7 +79,7 @@ class Bet(models.Model):
             return '2'
     
     def points(self):
-        if not self.game.is_played():
+        if not self.game.has_started():
             return None
         points = 0
         if self.threeway() == self.game.threeway():
