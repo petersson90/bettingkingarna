@@ -2,14 +2,20 @@ from django.views import generic
 from django.shortcuts import render, redirect
 from .models import Game, Bet
 from .forms import BetForm
+from datetime import datetime, timezone
 
 # Create your views here.
 class IndexView(generic.ListView):
     template_name = 'betting/index.html'
+    context_object_name = 'data'
 
     def get_queryset(self):
-        ''' Return all games ordered by start date/time. '''
-        return Game.objects.order_by('-start_time')
+        ''' Return two sets of games, past & upcoming '''
+        queryset = {
+            'past_games': Game.objects.filter(start_time__lt=datetime.now(timezone.utc)).order_by('-start_time'), 
+            'upcoming_games': Game.objects.filter(start_time__gte=datetime.now(timezone.utc)).order_by('start_time')
+        }
+        return queryset
     
 class DetailView(generic.DetailView):
     model = Game

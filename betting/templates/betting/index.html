@@ -3,14 +3,34 @@
 {% block content %}
 
 <h1>Bettingkingarna</h1>
-{% if game_list %}
+<h2>Kommande matcher</h2>
+{% if data.upcoming_games %}
     <table>
         <tr>
             <th>Datum</th>
             <th>Lag</th>
             <th>Resultat</th>
         </tr>
-    {% for game in game_list %}
+    {% for game in data.upcoming_games %}
+        <tr>
+            <td>{{ game.start_time }}</td>
+            <td><a href="{% url 'betting:detail' game.id %}">{{ game }}</a></td>
+            <td class="result">{{ game.result|default_if_none:"-" }}</td>
+        </tr>
+    {% endfor %}
+    </table>
+{% else %}
+    <p>No games are available.</p>
+{% endif %}
+<h2>Spelade matcher</h2>
+{% if data.past_games %}
+    <table>
+        <tr>
+            <th>Datum</th>
+            <th>Lag</th>
+            <th>Resultat</th>
+        </tr>
+    {% for game in data.past_games %}
         <tr>
             <td>{{ game.start_time }}</td>
             <td><a href="{% url 'betting:detail' game.id %}">{{ game }}</a></td>
