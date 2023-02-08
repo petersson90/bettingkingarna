@@ -68,7 +68,7 @@ def gameDetails(request, pk):
 
 
 @login_required(login_url='betting:login')
-@permission_required('betting.add_game')
+@permission_required('betting.add_game', login_url='betting:login')
 def createGame(request):
     form = GameForm()
     
@@ -83,7 +83,7 @@ def createGame(request):
 
 
 @login_required(login_url='betting:login')
-@permission_required('betting.change_game')
+@permission_required('betting.change_game', login_url='betting:login')
 def updateGame(request, pk):
     game = Game.objects.get(pk=pk)
     form = GameForm(instance=game)
@@ -99,7 +99,7 @@ def updateGame(request, pk):
 
 
 @login_required(login_url='betting:login')
-@permission_required('betting.add_team')
+@permission_required('betting.add_team', login_url='betting:login')
 def createTeam(request):
     form = TeamForm()
     
@@ -114,7 +114,7 @@ def createTeam(request):
 
 
 @login_required(login_url='betting:login')
-@permission_required('betting.change_team')
+@permission_required('betting.change_team', login_url='betting:login')
 def updateTeam(request, pk):
     team = Team.objects.get(pk=pk)
     form = TeamForm(instance=team)
