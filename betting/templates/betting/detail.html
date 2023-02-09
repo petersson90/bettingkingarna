@@ -3,20 +3,20 @@
 {% block content %}
 
 <h1>{{ game }}</h1>
-<p>Hemmalag: {{ game.home_team }} <a href="{% url 'betting:update-team' game.home_team.id %}">Uppdatera lag</a></p>
-<p>Bortalag: {{ game.away_team }} <a href="{% url 'betting:update-team' game.away_team.id %}">Uppdatera lag</a></p>
+<p>Hemmalag: {{ game.home_team }} {% if perms.betting.change_team %}<a href="{% url 'betting:update-team' game.home_team.id %}">Uppdatera lag</a>{% endif %}</p>
+<p>Bortalag: {{ game.away_team }} {% if perms.betting.change_team %}<a href="{% url 'betting:update-team' game.away_team.id %}">Uppdatera lag</a>{% endif %}</p>
 <time datetime="{{ game.start_time }}">{{ game.start_time }}</time>
 <p>{{ game.result|default_if_none:"-" }}</p>
-<p><a href="{% url 'betting:update-game' game.id %}">Uppdatera match</a></p>
+{% if perms.betting.change_game %}<p><a href="{% url 'betting:update-game' game.id %}">Uppdatera match</a></p>{% endif %}
 {% if game.bets.all %}
 <table>
     <tr>
         <th>Namn</th>
         <th>Resultat</th>
         <th>Poäng</th>
-        <th></th>
         <th>Skapat</th>
         <th>Uppdaterat</th>
+        <th></th>
     </tr>
     {% for bet in game.bets.all %}
     <tr>
@@ -24,11 +24,10 @@
         <td>{% if game.has_started or request.user == bet.user %}{{ bet.result }}{% endif %}</td>
         
         <td>{% if game.has_started %}{{ bet.points|default_if_none:"-" }}{% endif %}</td>
-        {% if not game.has_started and request.user == bet.user %}
-        {% comment %} <td><a href="{% url 'betting:update-bet' game.id bet.id %}">Ändra</a></td> {% endcomment %}
-        <td><a href="{% url 'betting:delete-bet' game.id bet.id %}">Ta bort</a></td>
         <td>{{ bet.created }}</td>
         <td>{{ bet.updated }}</td>
+        {% if not game.has_started and request.user == bet.user %}
+        <td><a href="{% url 'betting:delete-bet' game.id bet.id %}">Ta bort</a></td>
         {% endif %}
     <tr>
     {% endfor %}

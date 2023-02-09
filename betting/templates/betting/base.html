@@ -15,8 +15,8 @@
             {% if not request.user.is_authenticated %}
             <li><a href="{% url 'betting:login' %}">Logga in</a></li>
             {% else %}
-            <li><a href="{% url 'betting:create-team' %}">Skapa lag</a></li>
-            <li><a href="{% url 'betting:create-game' %}">Skapa match</a></li>
+            {% if perms.betting.add_team %}<li><a href="{% url 'betting:create-team' %}">Skapa lag</a></li>{% endif %}
+            {% if perms.betting.add_game %}<li><a href="{% url 'betting:create-game' %}">Skapa match</a></li>{% endif %}
             <li><a href="{% url 'betting:logout' %}">Logga ut</a></li>
             {% endif %}
         </ul>
