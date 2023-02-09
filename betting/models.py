@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Case, When
 from datetime import datetime, timezone
 
 # Create your models here.
@@ -7,6 +8,9 @@ class Team(models.Model):
     name = models.CharField(max_length=100)
     short = models.CharField(max_length=4)
     
+    class Meta:
+        ordering = [Case(When(id=1, then=0), default=1), 'name']
+        
     def __str__(self):
         return f'{self.name}'
     
@@ -26,7 +30,7 @@ class Game(models.Model):
     away_team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='away_games')
     home_goals = models.PositiveSmallIntegerField(blank=True, null=True)
     away_goals = models.PositiveSmallIntegerField(blank=True, null=True)
-    start_time = models.DateTimeField()
+    start_time = models.DateTimeField(default=datetime.now())
     
     def __str__(self):
         return f'{self.home_team} - {self.away_team}'
