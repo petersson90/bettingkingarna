@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<h1>{{ game }}</h1>
+<h2>{{ game }}</h2>
 <p>Hemmalag: {{ game.home_team }} {% if perms.betting.change_team %}<a href="{% url 'betting:update-team' game.home_team.id %}">Uppdatera lag</a>{% endif %}</p>
 <p>Bortalag: {{ game.away_team }} {% if perms.betting.change_team %}<a href="{% url 'betting:update-team' game.away_team.id %}">Uppdatera lag</a>{% endif %}</p>
 <time datetime="{{ game.start_time }}">{{ game.start_time }}</time>

@@ -1,9 +1,15 @@
 from django.contrib import admin
-from .models import Team, Game, Bet
+from .models import Competition, Team, Game, Bet
 
 # Register your models here.
+class CompetitionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'season')
+
+admin.site.register(Competition, CompetitionAdmin)
+
+
 class TeamAdmin(admin.ModelAdmin):
-    list_display = ('name', 'short', 'number_of_wins')
+    list_display = ('name', 'number_of_wins')
 
 admin.site.register(Team, TeamAdmin)
 
@@ -16,7 +22,7 @@ class BetInline(admin.TabularInline):
     
 class GameAdmin(admin.ModelAdmin):
     list_display = ('start_time', 'home_team', 'away_team', 'result')
-    list_filter = ['start_time', 'home_team', 'away_team']
+    list_filter = ['start_time', 'competition', 'home_team', 'away_team']
     inlines = [BetInline]
 
 admin.site.register(Game, GameAdmin)

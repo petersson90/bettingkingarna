@@ -64,7 +64,7 @@ def gameDetails(request, pk):
             return redirect('betting:detail', pk=pk)
         
     context = {'game': game, 'form': form}
-    return render(request, 'betting/detail.html', context)
+    return render(request, 'betting/game_detail.html', context)
 
 
 @login_required(login_url='betting:login')

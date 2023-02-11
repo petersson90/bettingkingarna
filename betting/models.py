@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 # Create your models here.
 class Team(models.Model):
     name = models.CharField(max_length=100)
-    short = models.CharField(max_length=4)
     
     class Meta:
         ordering = [Case(When(id=1, then=0), default=1), 'name']
@@ -17,20 +16,30 @@ class Team(models.Model):
     def number_of_wins(self):
         wins = 0
         for game in self.home_games.all():
-            if game.home_goals > game.away_goals:
+            if game.threeway() == '1':
                 wins += 1
         for game in self.away_games.all():
-            if game.away_goals > game.home_goals:
+            if game.threeway() == '2':
                 wins += 1
         return wins
 
 
+class Competition(models.Model):
+    name = models.CharField(max_length=100)
+    season = models.CharField(max_length=5)
+    teams = models.ManyToManyField(Team)
+    
+    def __str__(self):
+        return f'{self.name} {self.season}'
+
+
 class Game(models.Model):
+    competition = models.ForeignKey(Competition, on_delete=models.PROTECT, related_name="games")
     home_team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='home_games')
     away_team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='away_games')
     home_goals = models.PositiveSmallIntegerField(blank=True, null=True)
     away_goals = models.PositiveSmallIntegerField(blank=True, null=True)
-    start_time = models.DateTimeField(default=datetime.now())
+    start_time = models.DateTimeField(help_text='Format: 2023-05-01 19:00:00')
     
     def __str__(self):
         return f'{self.home_team} - {self.away_team}'

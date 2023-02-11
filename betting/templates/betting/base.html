@@ -8,26 +8,27 @@
 </head>
 
 <body>
-    <div id="sidebar">
-        {% block sidebar %}
-        <ul>
-            <li><a href="{% url 'betting:index' %}">Startsida</a></li>
-            {% if not request.user.is_authenticated %}
-            <li><a href="{% url 'betting:login' %}">Logga in</a></li>
-            {% else %}
-            {% if perms.betting.add_team %}<li><a href="{% url 'betting:create-team' %}">Skapa lag</a></li>{% endif %}
-            {% if perms.betting.add_game %}<li><a href="{% url 'betting:create-game' %}">Skapa match</a></li>{% endif %}
-            <li><a href="{% url 'betting:logout' %}">Logga ut</a></li>
-            {% endif %}
-        </ul>
-        {% endblock %}
-    </div>
-
+    <header>
+        <nav>
+            <ul>
+                <li><a href="{% url 'betting:index' %}">Startsida</a></li>
+                {% if not request.user.is_authenticated %}
+                <li><a href="{% url 'betting:login' %}">Logga in</a></li>
+                {% else %}
+                {% if perms.betting.add_team %}<li><a href="{% url 'betting:create-team' %}">Skapa lag</a></li>{% endif %}
+                {% if perms.betting.add_game %}<li><a href="{% url 'betting:create-game' %}">Skapa match</a></li>{% endif %}
+                <li><a href="{% url 'betting:logout' %}">Logga ut</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+    
     <div id="content">
+        <h1>Bettingkingarna</h1>
         {% if messages %}
-        <ul class="messages">
+        <div class="messages">
             {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags}}"{% endif %}>{{ message }}</li>
+            <p{% if message.tags %} class="{{ message.tags}}"{% endif %}>{{ message }}</p>
             {% endfor %}
         </ul>
         {% endif %}
