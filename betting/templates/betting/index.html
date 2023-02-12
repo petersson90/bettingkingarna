@@ -1,56 +1,42 @@
 {% extends "betting/base.html" %}
+{% load static %}
 
 {% block content %}
 <h2>Kommande matcher</h2>
 <section class="game-list">
-{% if upcoming_games %}
-    {% for game in upcoming_games %}
-    <div class="game">
-        <div class="game-date">{{ game.start_time }}</div>
-        <div class="game-title"><a href="{% url 'betting:detail' game.id %}">{{ game }}</a></div>
-        <div class="result">{{ game.result|default_if_none:"-" }}</div>
+    {% if upcoming_games %}
+    <div class="list-group list-group-flush">
+        {% for game in upcoming_games %}
+        <a href="{% url 'betting:detail' game.id %}" class="list-group-item list-group-item-action">
+            <p class="mb-1"><span class="badge bg-secondary rounded-pill">{{ game.start_time }}</span></p>
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">{{ game }}</h5>
+            </div>
+        </a>
+        {% endfor %}
     </div>
-    {% endfor %}
-
-    <table>
-        <tr>
-            <th>Datum</th>
-            <th>Lag</th>
-            <th>Resultat</th>
-        </tr>
-    {% for game in upcoming_games %}
-        <tr>
-            <td>{{ game.start_time }}</td>
-            <td><a href="{% url 'betting:detail' game.id %}">{{ game }}</a></td>
-            <td class="result">{{ game.result|default_if_none:"-" }}</td>
-        </tr>
-    {% endfor %}
-    </table>
-{% else %}
-    <p>Inga tillgängliga matcher.</p>
-{% endif %}
+    {% else %}
+        <p>Inga matcher inlagda.</p>
+    {% endif %}
 </section>
 
-<h2>Spelade matcher</h2>
+<h2 class="border-top mt-3 pt-3">Spelade matcher</h2>
 <section class="game-list">
-{% if past_games %}
-    <table>
-        <tr>
-            <th>Datum</th>
-            <th>Lag</th>
-            <th>Resultat</th>
-        </tr>
-    {% for game in past_games %}
-        <tr>
-            <td>{{ game.start_time }}</td>
-            <td><a href="{% url 'betting:detail' game.id %}">{{ game }}</a></td>
-            <td class="result">{{ game.result|default_if_none:"-" }}</td>
-        </tr>
-    {% endfor %}
-    </table>
-{% else %}
-    <p>Inga tillgängliga matcher.</p>
-{% endif %}
+    {% if past_games %}
+    <div class="list-group list-group-flush">
+        {% for game in past_games %}
+        <a href="{% url 'betting:detail' game.id %}" class="list-group-item list-group-item-action">
+            <small class="mb-1">{{ game.start_time }}</small>
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">{{ game }}</h5>
+                <p class="badge bg-primary rounded-pill me-5">{{ game.result|default_if_none:"-" }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+        <p>Inga matcher inlagda.</p>
+    {% endif %}
 </section>
 
 {% endblock %}

@@ -1,7 +1,5 @@
-html {
+:root {
     font-size: 16px;
-}
-
-.result {
-    text-align: center;
+    --mff-himmelsbla: #A7D7FF;
+    --mff-emblembla: #0092D0;
 }
