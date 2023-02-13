@@ -27,7 +27,6 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=100)),
-                ('short', models.CharField(max_length=4)),
             ],
             options={
                 'ordering': [models.Case(models.When(id=1, then=0), default=1), 'name'],

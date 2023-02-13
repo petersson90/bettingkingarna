@@ -5,8 +5,8 @@
 <form method="POST" action="">
     {% csrf_token %}
     <p>Är du säker på att du vill ta bort "{{ obj }}"?</p>
-    <p><a href="{{ request.META.HTTP_REFERER }}">Gå tillbaka</a></p>
-    <input type="submit" value="Bekräfta" />
+    <button type="submit" class="btn btn-primary">Bekräfta</button>
+    <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-outline-secondary">Gå tillbaka</a>
 </form>
 
 {% endblock content %}

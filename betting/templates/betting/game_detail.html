@@ -1,48 +1,61 @@
 {% extends "betting/base.html" %}
 
 {% block content %}
-
-<h2>{{ game }}</h2>
-<p>Hemmalag: {{ game.home_team }} {% if perms.betting.change_team %}<a href="{% url 'betting:update-team' game.home_team.id %}">Uppdatera lag</a>{% endif %}</p>
-<p>Bortalag: {{ game.away_team }} {% if perms.betting.change_team %}<a href="{% url 'betting:update-team' game.away_team.id %}">Uppdatera lag</a>{% endif %}</p>
-<time datetime="{{ game.start_time }}">{{ game.start_time }}</time>
-<p>{{ game.result|default_if_none:"-" }}</p>
-{% if perms.betting.change_game %}<p><a href="{% url 'betting:update-game' game.id %}">Uppdatera match</a></p>{% endif %}
+<div class="d-flex align-items-start">
+    <p class="badge bg-secondary"><span class="lead"><time datetime="{{ game.start_time }}">{{ game.start_time }}</time></span></p>
+    {% if perms.betting.change_game %}<p class="ms-auto"><a href="{% url 'betting:update-game' game.id %}">Uppdatera match</a></p>{% endif %}
+</div>
+<div class="d-flex align-items-start">
+    <h2 class="">{{ game }}</h2>
+    <span class="badge bg-primary ms-5"><span class="h3">{{ game.result|default_if_none:"-" }}</span></span>
+</div>
 {% if game.bets.all %}
-<table>
-    <tr>
-        <th>Namn</th>
-        <th>Resultat</th>
-        <th>Poäng</th>
-        <th>Skapat</th>
-        <th>Uppdaterat</th>
-        <th></th>
-    </tr>
-    {% for bet in game.bets.all %}
-    <tr>
-        <td>{{ bet.user }}</td>
-        <td>{% if game.has_started or request.user == bet.user %}{{ bet.result }}{% endif %}</td>
-        
-        <td>{% if game.has_started %}{{ bet.points|default_if_none:"-" }}{% endif %}</td>
-        <td>{{ bet.created }}</td>
-        <td>{{ bet.updated }}</td>
-        {% if not game.has_started and request.user == bet.user %}
-        <td><a href="{% url 'betting:delete-bet' game.id bet.id %}">Ta bort</a></td>
-        {% endif %}
-    <tr>
-    {% endfor %}
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th scope="col">Namn</th>
+            <th scope="col">Resultat</th>
+            <th scope="col">Poäng</th>
+            <th scope="col">Skapat</th>
+            <th scope="col">Uppdaterat</th>
+            <th scope="col"></th>
+        </tr>
+    </thead>
+    <tbody class="table-group-divider">
+        {% for bet in game.bets.all %}
+        <tr class="{% if request.user == bet.user %}table-active{% endif %}">
+            <td>{{ bet.user }}</td>
+            <td>{% if game.has_started or request.user == bet.user %}{{ bet.result }}{% endif %}</td>
+            
+            <td>{% if game.has_started %}{{ bet.points|default_if_none:"-" }}{% endif %}</td>
+            <td>{{ bet.created }}</td>
+            <td>{{ bet.updated }}</td>
+            {% if not game.has_started and request.user == bet.user %}
+            <td><a href="{% url 'betting:delete-bet' game.id bet.id %}">Ta bort</a></td>
+            {% endif %}
+        <tr>
+        {% endfor %}
+    </tbody>
 </table>
 {% else %}
 <p>Ingen har tippat på matchen än.</p>
 {% endif %}
 
 {% if not game.has_started %}
-<h3>Lägg till bet</h3>
-<div>
+<h3>Lägg till/ändra bet</h3>
+<div class="col-md-6">
     <form method="POST" action="">
         {% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit" value="Submit">
+        {% comment %} {{ form.as_div }} {% endcomment %}
+        <div class="input-group">
+            <span class="input-group-text">Resultat:</span>
+            {{ form.home_goals.errors }}
+            {{ form.home_goals }}
+            <span class="input-group-text">-</span>
+            {{ form.away_goals.errors }}
+            {{ form.away_goals }}
+            <button type="submit" class="btn btn-primary">Skicka</button>
+        </div>
     </form>
 </div>
 {% endif %}

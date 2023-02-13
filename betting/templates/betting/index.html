@@ -10,7 +10,7 @@
         <a href="{% url 'betting:detail' game.id %}" class="list-group-item list-group-item-action">
             <p class="mb-1"><span class="badge bg-secondary rounded-pill">{{ game.start_time }}</span></p>
             <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">{{ game }}</h5>
+                <h5 class="mb-1">{% if game.home_team.logo %}<img src="{{ game.home_team.logo.url }}" width="24" height="24">{% endif %}{{ game }}</h5>
             </div>
         </a>
         {% endfor %}
