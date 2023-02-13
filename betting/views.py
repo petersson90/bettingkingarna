@@ -3,7 +3,6 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, permission_required
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
-from django.views import generic
 from .models import Team, Game, Bet
 from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm
@@ -38,6 +37,15 @@ def loginPage(request):
 def logoutUser(request):
     logout(request)
     return redirect('betting:index')
+
+
+def teamList(request):
+    context = {
+        'team_list': Team.objects.all(),
+    }
+    
+    return render(request, 'betting/team_list.html', context)
+
 
 def gameList(request):
     context = {

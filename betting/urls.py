@@ -7,6 +7,7 @@ urlpatterns = [
     path('login/', views.loginPage, name='login'),
     path('logout/', views.logoutUser, name='logout'),
     path('', views.gameList, name='index'),
+    path('team/', views.teamList, name='list-team'),
     path('team/create/', views.createTeam, name='create-team'),
     path('team/<int:pk>/update/', views.updateTeam, name='update-team'),
     path('game/create/', views.createGame, name='create-game'),
