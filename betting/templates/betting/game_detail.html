@@ -2,12 +2,14 @@
 
 {% block content %}
 <div class="d-flex align-items-start">
-    <p class="badge bg-secondary"><span class="lead"><time datetime="{{ game.start_time }}">{{ game.start_time }}</time></span></p>
-    {% if perms.betting.change_game %}<p class="ms-auto"><a href="{% url 'betting:update-game' game.id %}">Uppdatera match</a></p>{% endif %}
+    <small class="lead"><time datetime="{{ game.start_time }}">{{ game.start_time }}</time></small>
+    {% if perms.betting.change_game %}<a class="btn btn-outline-primary ms-auto" href="{% url 'betting:update-game' game.id %}">Uppdatera match</a>{% endif %}
 </div>
 <div class="d-flex align-items-start">
     <h2 class="">{{ game }}</h2>
-    <span class="badge bg-primary ms-5"><span class="h3">{{ game.result|default_if_none:"-" }}</span></span>
+    {% if game.has_started %}
+        <span class="badge bg-primary ms-5"><span class="h3">{{ game.result|default_if_none:'&nbsp;-&nbsp;' }}</span></span>
+    {% endif %}
 </div>
 {% if game.bets.all %}
 <table class="table table-striped table-hover">

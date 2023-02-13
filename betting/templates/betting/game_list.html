@@ -8,7 +8,7 @@
     <div class="list-group list-group-flush">
         {% for game in upcoming_games %}
         <a href="{% url 'betting:detail' game.id %}" class="list-group-item list-group-item-action">
-            <p class="mb-1"><span class="badge bg-secondary rounded-pill">{{ game.start_time }}</span></p>
+            <small class="mb-1">{{ game.start_time }}</small>
             <div class="d-flex w-100 justify-content-between">
                 <h5 class="mb-1">{{ game }}</h5>
             </div>
@@ -20,7 +20,7 @@
     {% endif %}
 </section>
 
-<h2 class="border-top mt-3 pt-3">Spelade matcher</h2>
+<h2 class="border-top border-5 border-dark mt-3 pt-3">Spelade matcher</h2>
 <section class="game-list">
     {% if past_games %}
     <div class="list-group list-group-flush">

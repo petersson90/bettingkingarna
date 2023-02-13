@@ -53,7 +53,7 @@ def gameList(request):
         'upcoming_games': Game.objects.filter(start_time__gte=datetime.now(timezone.utc)).order_by('start_time')
     }
     
-    return render(request, 'betting/index.html', context)
+    return render(request, 'betting/game_list.html', context)
 
 
 @login_required(login_url='betting:login')
