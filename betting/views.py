@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, permission_required
+from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from .models import Team, Game, Bet
@@ -8,7 +9,10 @@ from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm
 from datetime import datetime, timezone
 
-# Create your views here.    
+# Create your views here.
+
+current_datetime = datetime.now(timezone.utc)
+
 def loginPage(request):
     if request.user.is_authenticated:
         return redirect('betting:index')
@@ -49,8 +53,8 @@ def teamList(request):
 
 def gameList(request):
     context = {
-        'past_games': Game.objects.filter(start_time__lt=datetime.now(timezone.utc)).order_by('-start_time'), 
-        'upcoming_games': Game.objects.filter(start_time__gte=datetime.now(timezone.utc)).order_by('start_time')
+        'past_games': Game.objects.filter(start_time__lt=current_datetime, start_time__year=current_datetime.year).order_by('-start_time'), 
+        'upcoming_games': Game.objects.filter(start_time__gte=current_datetime, start_time__year=current_datetime.year).order_by('start_time')
     }
     
     return render(request, 'betting/game_list.html', context)
@@ -141,12 +145,17 @@ def updateTeam(request, pk):
 def deleteBet(request, game, pk):
     bet = Bet.objects.get(id=pk)
     
+    if bet.game.id != game:
+        messages.error(request, 'The bet is not related to this game.')
+        return redirect('betting:detail', pk=game)
+    
     if request.user != bet.user:
-        return HttpResponse('Nice try!')
+        messages.error(request, 'Your are not authorized to delete someone else\'s bet.')
+        return redirect('betting:detail', pk=game)
     
     if request.method == 'POST':
         bet.delete()
-        return redirect('betting:detail', pk=bet.game.id)
+        return redirect('betting:detail', pk=game)
     
     context = {'obj': bet}
     return render(request, 'betting/delete.html', context)
