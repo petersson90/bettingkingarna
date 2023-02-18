@@ -14,4 +14,5 @@ urlpatterns = [
     path('game/<int:pk>/update/', views.updateGame, name='update-game'),
     path('game/<int:pk>/', views.gameDetails, name='detail'),
     path('game/<int:game>/delete-bet/<int:pk>/', views.deleteBet, name='delete-bet'),
+    path('standings/', views.standingsList, name='list-standings'),
 ]

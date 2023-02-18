@@ -1,0 +1,37 @@
+{% extends "betting/base.html" %}
+
+{% block content %}
+{% comment %} {% if result_table %} {% endcomment %}
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">User</th>
+            <th scope="col">Points</th>
+            <th scope="col"></th>
+        </tr>
+    </thead>
+    <tbody class="table-group-divider">
+        {% comment %} {% for row in result_table %}
+        <tr>
+            <td>{{ row.user }}</td>
+            <td>{{ row.sum_points }}</td>
+        <tr>
+        {% endfor %} {% endcomment %}
+        <tr><td>1</td><td></td><td></td><td>Årskort 2024</td></tr>
+        <tr><td>2</td><td></td><td></td><td>Halsduk (eller motsvarande belopp i MFF-shopen)</td></tr>
+        <tr><td>3</td><td></td><td></td><td>Betala för ovanstående</td></tr>
+        <tr><td>4</td><td></td><td></td><td>Betala för ovanstående</td></tr>
+        <tr><td>5</td><td></td><td></td><td>Betala för ovanstående</td></tr>
+        <tr><td>6</td><td></td><td></td><td>Betala för ovanstående</td></tr>
+        <tr><td>7</td><td></td><td></td><td>Betala för ovanstående</td></tr>
+        <tr><td>8</td><td></td><td></td><td>Betala för ovanstående och arrangera fest</td></tr>
+        <tr><td>9</td><td></td><td></td><td>Betala för ovanstående och arrangera fest</td></tr>
+        <tr><td>10</td><td></td><td></td><td>Betala för ovanstående och arrangera fest</td></tr>
+    </tbody>
+</table>
+{% comment %} {% else %}
+<p>Inga användare eller poäng har delats ut.</p>
+{% endif %} {% endcomment %}
+
+{% endblock %}

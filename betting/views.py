@@ -159,3 +159,7 @@ def deleteBet(request, game, pk):
     
     context = {'obj': bet}
     return render(request, 'betting/delete.html', context)
+
+def standingsList(request):
+    context = {}
+    return render(request, 'betting/standings.html', context)
