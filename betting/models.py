@@ -97,6 +97,8 @@ class Bet(models.Model):
         points = 0
         if self.threeway() == self.game.threeway():
             points += 3
+            if self.threeway() == 'X' and self.home_goals != self.game.home_goals:
+                points += 1
         if self.home_goals == self.game.home_goals:
             points += 1
         if self.away_goals == self.game.away_goals:
