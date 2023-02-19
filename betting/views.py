@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from .models import Team, Game, Bet
@@ -160,6 +160,90 @@ def deleteBet(request, game, pk):
     context = {'obj': bet}
     return render(request, 'betting/delete.html', context)
 
-def standingsList(request):
-    context = {}
+def standingsList(request):    
+    all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1).annotate(total_bets=Count('game'))
+    # filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1)
+    # print(all_users)
+    
+    result_2022 = []   
+    for row in all_users:
+        # print(bet.user, bet.game, bet.points())
+        user = CustomUser.objects.get(pk=row['user'])
+        
+        user_bets = Bet.objects.filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1)
+        # print(user_bets)
+        points = 0
+        for bet in user_bets:
+            points += bet.points()
+        
+        result_2022.append({'user': user, 'total_bets': row['total_bets'], 'points': points})
+    
+    result_2022.sort(key=lambda x: x['points'], reverse=True)
+    
+    prizes_8 = {
+        '1': 'Matchtröja',
+        '2': '',
+        '3': 'Betala för ovanstående',
+        '4': 'Betala för ovanstående',
+        '5': 'Betala för ovanstående',
+        '6': 'Betala för ovanstående',
+        '7': 'Betala för ovanstående och arrangera fest',
+        '8': 'Betala för ovanstående och arrangera fest',
+    }
+    
+    count, rank = 0, 0
+    previous = None
+    for row in result_2022:
+        current_value = row['points']
+        count += 1
+        if current_value != previous:
+            rank += count
+            previous = current_value
+            count = 0
+        row['rank'] = rank
+        row['prize'] = prizes_8[str(rank)]
+            
+    all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year).annotate(total_bets=Count('game'))
+    
+    current_standings = []
+    for row in all_users:
+        user = CustomUser.objects.get(pk=row['user'])
+        
+        user_bets = Bet.objects.filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year)
+        points = 0
+        for bet in user_bets:
+            if bet.points():
+                points += bet.points()
+        
+        current_standings.append({'user': user, 'total_bets': row['total_bets'], 'points': points})
+    
+    current_standings.sort(key=lambda x: x['points'], reverse=True)
+    
+    prizes_10 = {
+        '1': 'Årskort',
+        '2': 'Halsduk (eller motsvarande belopp i MFF-shopen)',
+        '3': 'Betala för ovanstående',
+        '4': 'Betala för ovanstående',
+        '5': 'Betala för ovanstående',
+        '6': 'Betala för ovanstående',
+        '7': 'Betala för ovanstående',
+        '8': 'Betala för ovanstående och arrangera fest',
+        '9': 'Betala för ovanstående och arrangera fest',
+        '10': 'Betala för ovanstående och arrangera fest',
+    }
+    
+    count, rank = 0, 0
+    previous = None
+    for row in current_standings:
+        current_value = row['points']
+        count += 1
+        if current_value != previous:
+            rank += count
+            previous = current_value
+            count = 0
+        row['rank'] = rank
+        row['prize'] = prizes_10[str(rank)]
+    
+        
+    context = {'result_2022': result_2022, 'current_standings': current_standings}
     return render(request, 'betting/standings.html', context)

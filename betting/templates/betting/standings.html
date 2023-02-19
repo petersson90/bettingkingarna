@@ -1,7 +1,8 @@
 {% extends "betting/base.html" %}
 
 {% block content %}
-{% comment %} {% if result_table %} {% endcomment %}
+<h2>Aktuell tabell</h2>
+{% if current_standings %}
 <table class="table table-striped table-hover">
     <thead>
         <tr>
@@ -12,26 +13,44 @@
         </tr>
     </thead>
     <tbody class="table-group-divider">
-        {% comment %} {% for row in result_table %}
-        <tr>
+        {% for row in current_standings %}
+        <tr class="{% if row.rank == 1 %}border-secondary border-2{% elif row.rank == 2 or row.rank == 7 %}border-secondary{% endif %}">
+            <td>{{ row.rank }}</td>
             <td>{{ row.user }}</td>
-            <td>{{ row.sum_points }}</td>
+            <td class="text-end">{{ row.points }}</td>
+            <td class="text-muted">{{ row.prize }}</td>
         <tr>
-        {% endfor %} {% endcomment %}
-        <tr class="border-bottom border-secondary border-2"><td>1</td><td></td><td></td><td>Årskort 2024</td></tr>
-        <tr class="border-bottom border-secondary"><td>2</td><td></td><td></td><td>Halsduk (eller motsvarande belopp i MFF-shopen)</td></tr>
-        <tr><td>3</td><td></td><td></td><td>Betala för ovanstående</td></tr>
-        <tr><td>4</td><td></td><td></td><td>Betala för ovanstående</td></tr>
-        <tr><td>5</td><td></td><td></td><td>Betala för ovanstående</td></tr>
-        <tr><td>6</td><td></td><td></td><td>Betala för ovanstående</td></tr>
-        <tr class="border-bottom border-secondary"><td>7</td><td></td><td></td><td>Betala för ovanstående</td></tr>
-        <tr><td>8</td><td></td><td></td><td>Betala för ovanstående och arrangera fest</td></tr>
-        <tr><td>9</td><td></td><td></td><td>Betala för ovanstående och arrangera fest</td></tr>
-        <tr><td>10</td><td></td><td></td><td>Betala för ovanstående och arrangera fest</td></tr>
+        {% endfor %}
     </tbody>
 </table>
-{% comment %} {% else %}
-<p>Inga användare eller poäng har delats ut.</p>
-{% endif %} {% endcomment %}
+{% else %}
+<p>Inga matcher har spelats.</p>
+{% endif %}
+
+<h2>Tabell 2022</h2>
+{% if result_2022 %}
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Namn</th>
+            <th scope="col" class="text-end">Poäng</th>
+            <th scope="col"></th>
+        </tr>
+    </thead>
+    <tbody class="table-group-divider">
+        {% for row in result_2022 %}
+        <tr class="{% if row.rank == 1 %}border-secondary border-2{% elif row.rank == 2 or row.rank == 6 %}border-secondary{% endif %}">
+            <td>{{ row.rank }}</td>
+            <td>{{ row.user }}</td>
+            <td class="text-end">{{ row.points }}</td>
+            <td class="text-muted">{{ row.prize }}</td>
+        <tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Inga matcher har spelats.</p>
+{% endif %}
 
 {% endblock %}
