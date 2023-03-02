@@ -170,7 +170,7 @@ def standingsList(request):
         # print(bet.user, bet.game, bet.points())
         user = CustomUser.objects.get(pk=row['user'])
         
-        user_bets = Bet.objects.filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1)
+        user_bets = Bet.objects.exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1)
         # print(user_bets)
         points = 0
         goal_diff = 0
@@ -245,20 +245,19 @@ def standingsList(request):
     for row in all_users:
         user = CustomUser.objects.get(pk=row['user'])
         
-        user_bets = Bet.objects.filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year)
+        user_bets = Bet.objects.exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year)
         
         points = 0
         goal_diff = 0
         goals_scored_diff = 0
         for bet in user_bets:
             points += bet.points()
-            if bet.game.home_goals:
-                if bet.game.home_team.id == 1:
-                    goal_diff += (bet.home_goals - bet.away_goals) - (bet.game.home_goals - bet.game.away_goals)
-                    goals_scored_diff += bet.home_goals - bet.game.home_goals
-                else:
-                    goal_diff += (bet.away_goals - bet.home_goals) - (bet.game.away_goals - bet.game.home_goals)
-                    goals_scored_diff += bet.away_goals - bet.game.away_goals
+            if bet.game.home_team.id == 1:
+                goal_diff += (bet.home_goals - bet.away_goals) - (bet.game.home_goals - bet.game.away_goals)
+                goals_scored_diff += bet.home_goals - bet.game.home_goals
+            else:
+                goal_diff += (bet.away_goals - bet.home_goals) - (bet.game.away_goals - bet.game.home_goals)
+                goals_scored_diff += bet.away_goals - bet.game.away_goals
         
         
         current_standings.append({
