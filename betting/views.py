@@ -173,12 +173,48 @@ def standingsList(request):
         user_bets = Bet.objects.filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1)
         # print(user_bets)
         points = 0
+        goal_diff = 0
+        goals_scored_diff = 0
         for bet in user_bets:
             points += bet.points()
+            if bet.game.home_team.id == 1:
+                goal_diff += (bet.home_goals - bet.away_goals) - (bet.game.home_goals - bet.game.away_goals)
+                goals_scored_diff += bet.home_goals - bet.game.home_goals
+            else:
+                goal_diff += (bet.away_goals - bet.home_goals) - (bet.game.away_goals - bet.game.home_goals)
+                goals_scored_diff += bet.away_goals - bet.game.away_goals
         
-        result_2022.append({'user': user, 'total_bets': row['total_bets'], 'points': points})
+        table_points = {
+            1: 12,
+            2: 12,
+            3: 12,
+            4: 14,
+            5: 12,
+            6: 18,
+            7: 14,
+            8: 14,
+        }
+        
+        result_2022.append({
+            'user': user,
+            'total_bets': row['total_bets'],
+            'points': points,
+            'table_points': table_points[user.id],
+            'goal_diff': goal_diff,
+            'goals_scored_diff': goals_scored_diff,
+        })
     
-    result_2022.sort(key=lambda x: x['points'], reverse=True)
+    max_total = 0
+    for row in result_2022:
+        total_points = row['points'] + row['table_points']
+        row['total_points'] = total_points
+        if total_points > max_total:
+            max_total = total_points
+            
+    for row in result_2022:
+        row['order'] = ((max_total - row['total_points']) * 100 + abs(row['goal_diff'])) * 100 + abs(row['goals_scored_diff'])
+    
+    result_2022.sort(key=lambda x: x['order'])
     
     prizes_8 = {
         '1': 'Matchtröja',
@@ -194,7 +230,7 @@ def standingsList(request):
     count, rank = 0, 0
     previous = None
     for row in result_2022:
-        current_value = row['points']
+        current_value = row['order']
         count += 1
         if current_value != previous:
             rank += count
@@ -210,19 +246,45 @@ def standingsList(request):
         user = CustomUser.objects.get(pk=row['user'])
         
         user_bets = Bet.objects.filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year)
-        points = 0
-        for bet in user_bets:
-            if bet.points():
-                points += bet.points()
         
-        current_standings.append({'user': user, 'total_bets': row['total_bets'], 'points': points})
+        points = 0
+        goal_diff = 0
+        goals_scored_diff = 0
+        for bet in user_bets:
+            points += bet.points()
+            if bet.game.home_goals:
+                if bet.game.home_team.id == 1:
+                    goal_diff += (bet.home_goals - bet.away_goals) - (bet.game.home_goals - bet.game.away_goals)
+                    goals_scored_diff += bet.home_goals - bet.game.home_goals
+                else:
+                    goal_diff += (bet.away_goals - bet.home_goals) - (bet.game.away_goals - bet.game.home_goals)
+                    goals_scored_diff += bet.away_goals - bet.game.away_goals
+        
+        
+        current_standings.append({
+            'user': user,
+            'total_bets': row['total_bets'],
+            'points': points,
+            'goal_diff': goal_diff,
+            'goals_scored_diff': goals_scored_diff,
+        })
     
-    current_standings.sort(key=lambda x: x['points'], reverse=True)
+    max_total = 0
+    for row in current_standings:
+        total_points = row['points'] # + row['table_points']
+        row['total_points'] = total_points
+        if total_points > max_total:
+            max_total = total_points
+            
+    for row in current_standings:
+        row['order'] = ((max_total - row['total_points']) * 100 + abs(row['goal_diff'])) * 100 + abs(row['goals_scored_diff'])
+    
+    current_standings.sort(key=lambda x: x['order'])
     
     prizes_10 = {
         '1': 'Årskort',
         '2': 'Halsduk (eller motsvarande belopp i MFF-shopen)',
-        '3': 'Betala för ovanstående',
+        '3': '',
         '4': 'Betala för ovanstående',
         '5': 'Betala för ovanstående',
         '6': 'Betala för ovanstående',
@@ -235,7 +297,7 @@ def standingsList(request):
     count, rank = 0, 0
     previous = None
     for row in current_standings:
-        current_value = row['points']
+        current_value = row['order']
         count += 1
         if current_value != previous:
             rank += count
@@ -247,3 +309,11 @@ def standingsList(request):
         
     context = {'result_2022': result_2022, 'current_standings': current_standings}
     return render(request, 'betting/standings.html', context)
+
+
+def userDetails(request, pk):
+    user = CustomUser.objects.get(pk=pk)
+    past_games = Game.objects.filter(start_time__lt=current_datetime, start_time__year=current_datetime.year).order_by('-start_time'), 
+    upcoming_games = Game.objects.filter(start_time__gte=current_datetime, start_time__year=current_datetime.year).order_by('start_time')
+    context = {'user': user, 'past_games': past_games, 'upcoming_games': upcoming_games}
+    return render(request, 'betting/user_detail.html', context)

@@ -8,16 +8,24 @@
         <tr>
             <th scope="col">#</th>
             <th scope="col">Namn</th>
-            <th scope="col">Poäng</th>
+            <th scope="col" class="text-end">Matcher</th>
+            <th scope="col" class="text-end">Tabell</th>
+            <th scope="col" class="text-end">Poäng</th>
+            <th scope="col" class="text-end">+/-</th>
+            <th scope="col" class="text-end">GM</th>
             <th scope="col"></th>
         </tr>
     </thead>
     <tbody class="table-group-divider">
         {% for row in current_standings %}
-        <tr class="{% if row.rank == 1 %}border-secondary border-2{% elif row.rank == 2 or row.rank == 7 %}border-secondary{% endif %}">
+        <tr class="{% if row.rank == 1 %}border-secondary border-2{% elif row.rank == 2 or row.rank == 3 or row.rank == 7 %}border-secondary{% endif %}">
             <td>{{ row.rank }}</td>
             <td>{{ row.user }}</td>
             <td class="text-end">{{ row.points }}</td>
+            <td class="text-end">{{ row.table_points }}</td>
+            <td class="text-end">{{ row.total_points }}</td>
+            <td class="text-end">{{ row.goal_diff }}</td>
+            <td class="text-end">{{ row.goals_scored_diff }}</td>
             <td class="text-muted">{{ row.prize }}</td>
         <tr>
         {% endfor %}
@@ -34,7 +42,11 @@
         <tr>
             <th scope="col">#</th>
             <th scope="col">Namn</th>
+            <th scope="col" class="text-end">Matcher</th>
+            <th scope="col" class="text-end">Tabell</th>
             <th scope="col" class="text-end">Poäng</th>
+            <th scope="col" class="text-end">+/-</th>
+            <th scope="col" class="text-end">GM</th>
             <th scope="col"></th>
         </tr>
     </thead>
@@ -44,6 +56,10 @@
             <td>{{ row.rank }}</td>
             <td>{{ row.user }}</td>
             <td class="text-end">{{ row.points }}</td>
+            <td class="text-end">{{ row.table_points }}</td>
+            <td class="text-end">{{ row.total_points }}</td>
+            <td class="text-end">{{ row.goal_diff }}</td>
+            <td class="text-end">{{ row.goals_scored_diff }}</td>
             <td class="text-muted">{{ row.prize }}</td>
         <tr>
         {% endfor %}
