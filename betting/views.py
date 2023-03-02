@@ -219,12 +219,8 @@ def standingsList(request):
     prizes_8 = {
         '1': 'Matchtröja',
         '2': '',
-        '3': 'Betala för ovanstående',
-        '4': 'Betala för ovanstående',
-        '5': 'Betala för ovanstående',
-        '6': 'Betala för ovanstående',
-        '7': 'Betala för ovanstående och arrangera fest',
-        '8': 'Betala för ovanstående och arrangera fest',
+        '3-6': 'Betala för ovanstående',
+        '7-8': 'Betala för ovanstående och arrangera fest',
     }
     
     count, rank = 0, 0
@@ -237,7 +233,6 @@ def standingsList(request):
             previous = current_value
             count = 0
         row['rank'] = rank
-        row['prize'] = prizes_8[str(rank)]
             
     all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year).annotate(total_bets=Count('game'))
     
@@ -284,13 +279,8 @@ def standingsList(request):
         '1': 'Årskort',
         '2': 'Halsduk (eller motsvarande belopp i MFF-shopen)',
         '3': '',
-        '4': 'Betala för ovanstående',
-        '5': 'Betala för ovanstående',
-        '6': 'Betala för ovanstående',
-        '7': 'Betala för ovanstående',
-        '8': 'Betala för ovanstående och arrangera fest',
-        '9': 'Betala för ovanstående och arrangera fest',
-        '10': 'Betala för ovanstående och arrangera fest',
+        '4-7': 'Betala för ovanstående',
+        '8-10': 'Betala för ovanstående och arrangera fest',
     }
     
     count, rank = 0, 0
@@ -303,10 +293,9 @@ def standingsList(request):
             previous = current_value
             count = 0
         row['rank'] = rank
-        row['prize'] = prizes_10[str(rank)]
     
         
-    context = {'result_2022': result_2022, 'current_standings': current_standings}
+    context = {'result_2022': result_2022, 'current_standings': current_standings, 'prizes_8': prizes_8, 'prizes_10': prizes_10}
     return render(request, 'betting/standings.html', context)
 
 

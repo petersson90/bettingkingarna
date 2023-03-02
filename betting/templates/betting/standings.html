@@ -13,7 +13,6 @@
             <th scope="col" class="text-end">Poäng</th>
             <th scope="col" class="text-end">+/-</th>
             <th scope="col" class="text-end">GM</th>
-            <th scope="col"></th>
         </tr>
     </thead>
     <tbody class="table-group-divider">
@@ -26,11 +25,16 @@
             <td class="text-end">{{ row.total_points }}</td>
             <td class="text-end">{{ row.goal_diff }}</td>
             <td class="text-end">{{ row.goals_scored_diff }}</td>
-            <td class="text-muted">{{ row.prize }}</td>
         <tr>
         {% endfor %}
+
     </tbody>
 </table>
+<ul class="list-unstyled">
+    {% for rank, prize in prizes_10.items %}
+    <li class="text-muted">{{ rank }}: {{ prize }}</li>
+    {% endfor %}
+</ul>
 {% else %}
 <p>Inga matcher har spelats.</p>
 {% endif %}
@@ -47,7 +51,6 @@
             <th scope="col" class="text-end">Poäng</th>
             <th scope="col" class="text-end">+/-</th>
             <th scope="col" class="text-end">GM</th>
-            <th scope="col"></th>
         </tr>
     </thead>
     <tbody class="table-group-divider">
@@ -60,11 +63,15 @@
             <td class="text-end">{{ row.total_points }}</td>
             <td class="text-end">{{ row.goal_diff }}</td>
             <td class="text-end">{{ row.goals_scored_diff }}</td>
-            <td class="text-muted">{{ row.prize }}</td>
         <tr>
         {% endfor %}
     </tbody>
 </table>
+<ul class="list-unstyled">
+    {% for rank, prize in prizes_8.items %}
+    <li class="text-muted">{{ rank }}: {{ prize }}</li>
+    {% endfor %}
+</ul>
 {% else %}
 <p>Inga matcher har spelats.</p>
 {% endif %}
