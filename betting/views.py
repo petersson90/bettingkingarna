@@ -11,8 +11,6 @@ from datetime import datetime, timezone
 
 # Create your views here.
 
-current_datetime = datetime.now(timezone.utc)
-
 def loginPage(request):
     if request.user.is_authenticated:
         return redirect('betting:index')
@@ -52,6 +50,8 @@ def teamList(request):
 
 
 def gameList(request):
+    current_datetime = datetime.now(timezone.utc)
+    
     context = {
         'past_games': Game.objects.filter(start_time__lt=current_datetime, start_time__year=current_datetime.year).order_by('-start_time'), 
         'upcoming_games': Game.objects.filter(start_time__gte=current_datetime, start_time__year=current_datetime.year).order_by('start_time')
@@ -160,7 +160,9 @@ def deleteBet(request, game, pk):
     context = {'obj': bet}
     return render(request, 'betting/delete.html', context)
 
-def standingsList(request):    
+def standingsList(request):
+    current_datetime = datetime.now(timezone.utc)
+     
     all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1).annotate(total_bets=Count('game'))
     # filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1)
     # print(all_users)
@@ -297,11 +299,3 @@ def standingsList(request):
         
     context = {'result_2022': result_2022, 'current_standings': current_standings, 'prizes_8': prizes_8, 'prizes_10': prizes_10}
     return render(request, 'betting/standings.html', context)
-
-
-def userDetails(request, pk):
-    user = CustomUser.objects.get(pk=pk)
-    past_games = Game.objects.filter(start_time__lt=current_datetime, start_time__year=current_datetime.year).order_by('-start_time'), 
-    upcoming_games = Game.objects.filter(start_time__gte=current_datetime, start_time__year=current_datetime.year).order_by('start_time')
-    context = {'user': user, 'past_games': past_games, 'upcoming_games': upcoming_games}
-    return render(request, 'betting/user_detail.html', context)
