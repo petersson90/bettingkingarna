@@ -1,5 +1,5 @@
-from django.forms import ModelForm
-from .models import Team, Game, Bet
+from django.forms import ModelForm, ChoiceField, Select
+from .models import Team, Competition, Game, Bet, StandingPrediction
 
 class CustomModelForm(ModelForm):
     def __init__(self, *args, **kwargs):
@@ -24,3 +24,23 @@ class BetForm(CustomModelForm):
     class Meta:
         model = Bet
         fields = ['home_goals', 'away_goals']
+
+
+class StandingPredictionForm(CustomModelForm):
+    def __init__(self, *args, **kwargs):
+        competition = kwargs.pop('competition', None)
+        super().__init__(*args, **kwargs)
+        
+        teams = competition.teams.all()
+        positions = range(1, len(teams) + 1)
+        choices = [(team.id, team.name) for team in teams]
+        for i in positions:
+            self.fields[f'position_{i}'] = ChoiceField(
+                label=f'{i}.',
+                choices=choices,
+                widget=Select(attrs={'class': 'form-control'})
+            )
+
+    class Meta:
+        model = StandingPrediction
+        exclude = ['user', 'competition', 'standing', 'created', 'updated']

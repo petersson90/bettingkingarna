@@ -4,9 +4,9 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Sum, Count
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
-from .models import Team, Game, Bet
+from .models import Team, Competition, Game, Bet
 from accounts.models import CustomUser
-from .forms import TeamForm, GameForm, BetForm
+from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm
 from datetime import datetime, timezone
 
 # Create your views here.
@@ -61,8 +61,8 @@ def gameList(request):
 
 
 @login_required(login_url='betting:login')
-def gameDetails(request, pk):
-    game = Game.objects.get(pk=pk)
+def gameDetails(request, game_id):
+    game = Game.objects.get(pk=game_id)
     try:
         bet = Bet.objects.get(user=request.user, game=game)
     except:
@@ -73,7 +73,7 @@ def gameDetails(request, pk):
         form = BetForm(request.POST, instance=bet)
         if form.is_valid:
             form.save()
-            return redirect('betting:detail', pk=pk)
+            return redirect('betting:detail', pk=game_id)
         
     context = {'game': game, 'form': form}
     return render(request, 'betting/game_detail.html', context)
@@ -96,8 +96,8 @@ def createGame(request):
 
 @login_required(login_url='betting:login')
 @permission_required('betting.change_game', login_url='betting:login')
-def updateGame(request, pk):
-    game = Game.objects.get(pk=pk)
+def updateGame(request, game_id):
+    game = Game.objects.get(pk=game_id)
     form = GameForm(instance=game)
     
     if request.method == 'POST':
@@ -127,8 +127,8 @@ def createTeam(request):
 
 @login_required(login_url='betting:login')
 @permission_required('betting.change_team', login_url='betting:login')
-def updateTeam(request, pk):
-    team = Team.objects.get(pk=pk)
+def updateTeam(request, team_id):
+    team = Team.objects.get(pk=team_id)
     form = TeamForm(instance=team)
     
     if request.method == 'POST':
@@ -142,8 +142,8 @@ def updateTeam(request, pk):
 
 
 @login_required(login_url='betting:login')
-def deleteBet(request, game, pk):
-    bet = Bet.objects.get(id=pk)
+def deleteBet(request, game, bet_id):
+    bet = Bet.objects.get(id=bet_id)
     
     if bet.game.id != game:
         messages.error(request, 'The bet is not related to this game.')
@@ -299,3 +299,24 @@ def standingsList(request):
         
     context = {'result_2022': result_2022, 'current_standings': current_standings, 'prizes_8': prizes_8, 'prizes_10': prizes_10}
     return render(request, 'betting/standings.html', context)
+
+
+@login_required(login_url='betting:login')
+def create_standing_prediction(request, competition_id):
+    competition = Competition.objects.get(id=competition_id)
+    
+    form = StandingPredictionForm(competition=competition)
+    if request.method == 'POST':
+        form = StandingPredictionForm(request.POST, competition=competition)
+        if form.is_valid():
+            standing_prediction = form.save(commit=False)
+            standing_prediction.user = request.user
+            standing_prediction.competition = competition
+            print(request.user, competition)
+            standings_list = [form.cleaned_data[f'position_{i}'] for i in range(1, competition.teams.count() + 1)]
+            print(standings_list)
+            standing_prediction.standing = ','.join(standings_list)
+            standing_prediction.save()
+            return redirect('betting:create_standing_prediction', competition_id)
+
+    return render(request, 'betting/create_standing_prediction.html', {'form': form, 'competition': competition})

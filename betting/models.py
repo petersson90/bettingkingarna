@@ -130,8 +130,8 @@ class StandingPrediction(models.Model):
             points -= abs(diff)
         return points
     
-    def clean(self):
-        super().clean()
+    def save(self):
+        super().save()
         predicted_standing = [int(x) for x in self.standing.split(',')]
         competition_teams = self.competition.teams.all()
         if len(predicted_standing) != len(competition_teams):

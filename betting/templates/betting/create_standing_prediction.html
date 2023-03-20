@@ -1,0 +1,22 @@
+{% extends 'betting/base.html' %}
+
+{% block content %}
+
+<h1>Create Standing Prediction</h1>
+<form method="POST" action="">
+    {% csrf_token %}
+    {% for field in form %}
+    {% if field.name|slice:':9' == 'position_' %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+        </div>
+    {% else %}
+        {{ field.label }} {{ field }}
+    {% endif %}
+    {% endfor %}
+    <button type="submit" class="btn btn-primary mt-2">Spara</button>
+    <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-outline-secondary mt-2">Gå tillbaka</a>
+</form>
+
+{% endblock content %}
