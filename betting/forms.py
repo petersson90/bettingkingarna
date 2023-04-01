@@ -1,4 +1,4 @@
-from django.forms import ModelForm, ChoiceField, Select
+from django.forms import ModelForm, ChoiceField, Select, ValidationError
 from .models import Team, Competition, Game, Bet, StandingPrediction
 
 class CustomModelForm(ModelForm):
@@ -30,6 +30,18 @@ class StandingPredictionForm(CustomModelForm):
     def __init__(self, *args, **kwargs):
         competition = kwargs.pop('competition', None)
         super().__init__(*args, **kwargs)
+        instance = kwargs.pop('instance', None)
+        
+        # if instance:
+        #     team_ids = [int(team_id) for team_id in instance.standing.split(',')]
+        #     print(team_ids)
+        #     teams = Team.objects.filter(id__in=team_ids)
+        #     team_names = [team.name for team in teams]
+        #     for i, team_name in enumerate(team_names):
+        #         self.fields[f'position_{i+1}'].initial = team_name
+        #     competition = instance.competition
+        # else:
+        #     competition = kwargs.pop('competition', None)
         
         teams = competition.teams.all()
         positions = range(1, len(teams) + 1)

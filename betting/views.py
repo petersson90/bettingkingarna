@@ -4,9 +4,10 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Sum, Count
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
-from .models import Team, Competition, Game, Bet
+from .models import Team, Competition, Game, Bet, StandingPrediction
 from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm
+from django.forms import ValidationError
 from datetime import datetime, timezone
 
 # Create your views here.
@@ -302,21 +303,39 @@ def standingsList(request):
 
 
 @login_required(login_url='betting:login')
-def create_standing_prediction(request, competition_id):
+def standing_prediction(request, competition_id):
     competition = Competition.objects.get(id=competition_id)
+    teams = []
+    try:
+        standing_prediction = StandingPrediction.objects.get(user=request.user, competition=competition)
+        form_data = {'user': request.user, 'competition': competition}
+        for i, team_id in enumerate(standing_prediction.standing.split(',')):
+            form_data[f'position_{i+1}'] = Team.objects.get(pk=team_id)
+        # print(form_data)
+        teams = [Team.objects.get(id=team_id) for team_id in standing_prediction.standing.split(',')]
+    except:
+        standing_prediction = StandingPrediction(user=request.user, competition=competition)
     
-    form = StandingPredictionForm(competition=competition)
     if request.method == 'POST':
         form = StandingPredictionForm(request.POST, competition=competition)
         if form.is_valid():
             standing_prediction = form.save(commit=False)
             standing_prediction.user = request.user
             standing_prediction.competition = competition
-            print(request.user, competition)
             standings_list = [form.cleaned_data[f'position_{i}'] for i in range(1, competition.teams.count() + 1)]
-            print(standings_list)
+            selected_teams = []
+            for team in standings_list:
+                if team not in selected_teams:
+                    selected_teams.append(team)
+            if len(standings_list) != len(selected_teams):
+                # print('Wrong number of unique teams')
+                raise ValidationError('Standing prediction must include all teams in the competition.')
+            if len(standings_list) != competition.teams.count():
+                # print('Wrong number of teams in competition')
+                raise ValidationError('Each team must be selected only once in the standing prediction.')
             standing_prediction.standing = ','.join(standings_list)
             standing_prediction.save()
-            return redirect('betting:create_standing_prediction', competition_id)
-
-    return render(request, 'betting/create_standing_prediction.html', {'form': form, 'competition': competition})
+            return redirect('betting:standing-prediction', competition_id)
+    else:
+        form = StandingPredictionForm(competition=competition)
+    return render(request, 'betting/standing_prediction.html', {'form': form, 'competition': competition, 'teams': teams})

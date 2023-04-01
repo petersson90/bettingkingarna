@@ -1,8 +1,25 @@
 {% extends 'betting/base.html' %}
 
 {% block content %}
-
-<h1>Create Standing Prediction</h1>
+{% if teams %}
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Lag</th>
+        </tr>
+    </thead>
+    <tbody class="table-group-divider">
+        {% for team in teams %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ team }}</td>
+        <tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<h1>Skapa tabellbet</h1>
 <form method="POST" action="">
     {% csrf_token %}
     {% for field in form %}
@@ -18,5 +35,5 @@
     <button type="submit" class="btn btn-primary mt-2">Spara</button>
     <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-outline-secondary mt-2">Gå tillbaka</a>
 </form>
-
+{% endif %}
 {% endblock content %}

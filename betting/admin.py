@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Competition, Team, Game, Bet
+from .models import Competition, Team, Game, Bet, StandingPrediction
 
 # Register your models here.
 class CompetitionAdmin(admin.ModelAdmin):
@@ -33,3 +33,9 @@ admin.site.register(Game, GameAdmin)
 #     list_filter = ['user']
 
 # admin.site.register(Bet, BetAdmin)
+
+class StandingPredictionAdmin(admin.ModelAdmin):
+    list_display = ('competition', 'user')
+    list_filter = ['user']
+
+admin.site.register(StandingPrediction, StandingPredictionAdmin)

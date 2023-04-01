@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.db import models
 from django.db.models import Case, When
-from django.core.exceptions import ValidationError
 from datetime import datetime, timezone
 
 # Create your models here.
@@ -118,9 +117,16 @@ class StandingPrediction(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     competition = models.ForeignKey(Competition, on_delete=models.PROTECT)
     standing = models.CharField(max_length=100)
+    top_scorer = models.CharField(max_length=100)
+    most_assists = models.CharField(max_length=100)
     # Hidden fields to keep track of creation and update time
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'competition'], name='one_bet_per_user_per_competition')
+        ]
 
     def calculate_points(self, actual_standing):
         points = 0
@@ -129,13 +135,3 @@ class StandingPrediction(models.Model):
             diff = predicted_standing[i] - actual_standing[i]
             points -= abs(diff)
         return points
-    
-    def save(self):
-        super().save()
-        predicted_standing = [int(x) for x in self.standing.split(',')]
-        competition_teams = self.competition.teams.all()
-        if len(predicted_standing) != len(competition_teams):
-            raise ValidationError('Standing prediction must include every team in the competition.')
-        for team in competition_teams:
-            if predicted_standing.count(team.id) != 1:
-                raise ValidationError(f'{team.name} must be selected exactly once in the standing prediction.')
