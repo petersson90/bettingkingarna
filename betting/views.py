@@ -62,8 +62,8 @@ def gameList(request):
 
 
 @login_required(login_url='betting:login')
-def gameDetails(request, game_id):
-    game = Game.objects.get(pk=game_id)
+def gameDetails(request, pk):
+    game = Game.objects.get(pk=pk)
     try:
         bet = Bet.objects.get(user=request.user, game=game)
     except:
@@ -74,7 +74,7 @@ def gameDetails(request, game_id):
         form = BetForm(request.POST, instance=bet)
         if form.is_valid:
             form.save()
-            return redirect('betting:detail', pk=game_id)
+            return redirect('betting:detail', pk=pk)
         
     context = {'game': game, 'form': form}
     return render(request, 'betting/game_detail.html', context)
