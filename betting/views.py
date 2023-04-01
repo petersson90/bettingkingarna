@@ -62,19 +62,19 @@ def gameList(request):
 
 
 @login_required(login_url='betting:login')
-def gameDetails(request, pk):
-    game = Game.objects.get(pk=pk)
+def gameDetails(request, game_id):
+    game = Game.objects.get(pk=game_id)
     try:
-        bet = Bet.objects.get(user=request.user, game=game)
+        bet = Bet.objects.get(user=request.user, game_id=game_id)
     except:
-        bet = Bet(user=request.user, game=game)
+        bet = Bet(user=request.user, game_id=game_id)
     form = BetForm(instance=bet)
     
     if request.method == 'POST':
         form = BetForm(request.POST, instance=bet)
         if form.is_valid:
             form.save()
-            return redirect('betting:detail', pk=pk)
+            return redirect('betting:detail', game_id=game_id)
         
     context = {'game': game, 'form': form}
     return render(request, 'betting/game_detail.html', context)
@@ -143,20 +143,20 @@ def updateTeam(request, team_id):
 
 
 @login_required(login_url='betting:login')
-def deleteBet(request, game, bet_id):
+def deleteBet(request, game_id, bet_id):
     bet = Bet.objects.get(id=bet_id)
     
-    if bet.game.id != game:
+    if bet.game.id != game_id:
         messages.error(request, 'The bet is not related to this game.')
-        return redirect('betting:detail', pk=game)
+        return redirect('betting:detail', game_id=game_id)
     
     if request.user != bet.user:
         messages.error(request, 'Your are not authorized to delete someone else\'s bet.')
-        return redirect('betting:detail', pk=game)
+        return redirect('betting:detail', game_id=game_id)
     
     if request.method == 'POST':
         bet.delete()
-        return redirect('betting:detail', pk=game)
+        return redirect('betting:detail', game_id=game_id)
     
     context = {'obj': bet}
     return render(request, 'betting/delete.html', context)
