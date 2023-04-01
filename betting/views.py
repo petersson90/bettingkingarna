@@ -306,6 +306,8 @@ def standingsList(request):
 def standing_prediction(request, competition_id):
     competition = Competition.objects.get(id=competition_id)
     teams = []
+    top_scorer = ''
+    most_assists = ''
     try:
         standing_prediction = StandingPrediction.objects.get(user=request.user, competition=competition)
         form_data = {'user': request.user, 'competition': competition}
@@ -313,6 +315,9 @@ def standing_prediction(request, competition_id):
             form_data[f'position_{i+1}'] = Team.objects.get(pk=team_id)
         # print(form_data)
         teams = [Team.objects.get(id=team_id) for team_id in standing_prediction.standing.split(',')]
+        top_scorer = standing_prediction.top_scorer
+        most_assists = standing_prediction.most_assists
+        
     except:
         standing_prediction = StandingPrediction(user=request.user, competition=competition)
     
@@ -338,4 +343,4 @@ def standing_prediction(request, competition_id):
             return redirect('betting:standing-prediction', competition_id)
     else:
         form = StandingPredictionForm(competition=competition)
-    return render(request, 'betting/standing_prediction.html', {'form': form, 'competition': competition, 'teams': teams})
+    return render(request, 'betting/standing_prediction.html', {'form': form, 'competition': competition, 'teams': teams, 'top_scorer': top_scorer, 'most_assists': most_assists})
