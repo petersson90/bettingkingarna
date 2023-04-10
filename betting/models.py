@@ -128,10 +128,10 @@ class StandingPrediction(models.Model):
             models.UniqueConstraint(fields=['user', 'competition'], name='one_bet_per_user_per_competition')
         ]
 
-    def calculate_points(self, actual_standing):
+    def calculate_points(self, actual_standing: list[Team]):
         points = 0
-        predicted_standing = [int(x) for x in self.standing.split(',')]
-        for i in range(16):
-            diff = predicted_standing[i] - actual_standing[i]
+        predicted_standing = [Team.objects.get(team_id) for team_id in self.standing.split(',')]
+        for position, team in enumerate(predicted_standing):
+            diff = position - actual_standing.index(team)
             points -= abs(diff)
         return points

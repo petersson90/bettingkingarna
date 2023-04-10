@@ -344,3 +344,51 @@ def standing_prediction(request, competition_id):
     else:
         form = StandingPredictionForm(competition=competition)
     return render(request, 'betting/standing_prediction.html', {'form': form, 'competition': competition, 'teams': teams, 'top_scorer': top_scorer, 'most_assists': most_assists})
+
+
+def standingPredictionsList(request, competition_id):
+    # current_datetime = datetime.now(timezone.utc)
+    
+    competition = Competition.objects.get(id=competition_id)
+    all_users = StandingPrediction.objects.values('user').filter(competition=competition_id).order_by('user__first_name')
+    
+    if competition_id == 3:
+        current_standings = [Team.objects.get(id=team_id) for team_id in '23,1,11,3,15,4,6,8,5,29,24,13,18,30,22,7'.split(',')]
+        top_scorer = 'Isaac Kiese Thelin & Benie Traoré'
+        most_assists = 'Lars Olden Larsen'
+    else:
+        current_standings = []
+        top_scorer = '',
+        most_assists = ''
+    
+    standing_predictions = []
+    for row in all_users:
+        user = CustomUser.objects.get(pk=row['user'])
+                
+        user_standing_prediction = StandingPrediction.objects.get(user=user.id, competition=competition_id)
+        teams = [Team.objects.get(id=team_id) for team_id in user_standing_prediction.standing.split(',')]
+        user_top_scorer = user_standing_prediction.top_scorer
+        user_most_assists = user_standing_prediction.most_assists
+        
+        points = 0
+        for position, team in enumerate(teams):
+            diff = position - current_standings.index(team)
+            points -= abs(diff)
+                
+        standing_predictions.append({
+            'user': user,
+            'teams': teams,
+            'top_scorer': user_top_scorer,
+            'most_assists': user_most_assists,
+            'points': points
+        })
+    
+    teams = []
+    for i, team in enumerate(current_standings):
+        teams.append([team])
+        for row in standing_predictions:
+            teams[i].append(row['teams'][i])
+        
+    # context = {'result_2022': result_2022, 'current_standings': current_standings, 'prizes_8': prizes_8, 'prizes_10': prizes_10}
+    context = {'competition': competition, 'standing_predictions': standing_predictions, 'teams': teams, 'top_scorer': top_scorer, 'most_assists': most_assists}
+    return render(request, 'betting/standing_prediction_list.html', context)

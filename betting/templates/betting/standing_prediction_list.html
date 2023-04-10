@@ -1,0 +1,48 @@
+{% extends "betting/base.html" %}
+
+{% block content %}
+<h2>Tabellbet för {{ competition }}</h2>
+<table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th scope="col">Plac.</th>
+            <th scope="col">Lag</th>
+            {% for row in standing_predictions %}
+                <th scope="col">{{ row.user }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody class="table-group-divider">
+        {% for team_list in teams %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                {% for team in team_list %}
+                    <td>{{ team }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+        <tr class="table-group-divider">
+            <td></td>
+            <td>Poäng</td>
+            {% for row in standing_predictions %}
+                <td>{{ row.points }}</td>
+            {% endfor %}
+        </tr>
+        <tr class="table-group-divider">
+            <td>Skyttekung</td>
+            <td>{{ top_scorer }}</td>
+            {% for row in standing_predictions %}
+                <td>{{ row.top_scorer }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td>Assistkung</td>
+            <td>{{ most_assists }}</td>
+            {% for row in standing_predictions %}
+                <td>{{ row.most_assists }}</td>
+            {% endfor %}
+        </tr>
+    </tbody>
+</table>
+
+{% endblock %}
