@@ -7,13 +7,15 @@
         <tr>
             <th scope="col">#</th>
             <th scope="col">Lag</th>
+            <th scope="col">Poäng</th>
         </tr>
     </thead>
     <tbody class="table-group-divider">
-        {% for team in teams %}
+        {% for row in bet_results %}
         <tr>
             <td>{{ forloop.counter }}</td>
-            <td>{{ team }}</td>
+            <td>{{ row.team }}</td>
+            <td>{{ row.points }}</td>
         <tr>
         {% endfor %}
     </tbody>

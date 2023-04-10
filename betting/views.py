@@ -308,6 +308,7 @@ def standing_prediction(request, competition_id):
     teams = []
     top_scorer = ''
     most_assists = ''
+    
     try:
         standing_prediction = StandingPrediction.objects.get(user=request.user, competition=competition)
         form_data = {'user': request.user, 'competition': competition}
@@ -315,6 +316,26 @@ def standing_prediction(request, competition_id):
             form_data[f'position_{i+1}'] = Team.objects.get(pk=team_id)
         # print(form_data)
         teams = [Team.objects.get(id=team_id) for team_id in standing_prediction.standing.split(',')]
+        if competition_id == 3:
+            current_standings = [Team.objects.get(id=team_id) for team_id in '23,1,11,3,15,4,6,8,5,29,24,13,18,30,22,7'.split(',')]
+        else:
+            current_standings = []
+        
+        bet_results = []
+        total_points = 0
+        for position, team in enumerate(teams):
+            actual_pos = current_standings.index(team)
+            diff = position - actual_pos
+            points = -abs(diff)
+            bet_results.append({
+                'team': team,
+                'prediction': position,
+                'actual_pos': actual_pos + 1,
+                'diff': diff,
+                'points': points
+            })
+            total_points += points
+        
         top_scorer = standing_prediction.top_scorer
         most_assists = standing_prediction.most_assists
         
@@ -343,7 +364,7 @@ def standing_prediction(request, competition_id):
             return redirect('betting:standing-prediction', competition_id)
     else:
         form = StandingPredictionForm(competition=competition)
-    return render(request, 'betting/standing_prediction.html', {'form': form, 'competition': competition, 'teams': teams, 'top_scorer': top_scorer, 'most_assists': most_assists})
+    return render(request, 'betting/standing_prediction.html', {'form': form, 'competition': competition, 'teams': teams, 'bet_results': bet_results, 'top_scorer': top_scorer, 'most_assists': most_assists})
 
 
 def standingPredictionsList(request, competition_id):
@@ -370,24 +391,26 @@ def standingPredictionsList(request, competition_id):
         user_top_scorer = user_standing_prediction.top_scorer
         user_most_assists = user_standing_prediction.most_assists
         
-        points = 0
+        bet_points = []
         for position, team in enumerate(teams):
             diff = position - current_standings.index(team)
-            points -= abs(diff)
+            bet_points.append(-abs(diff))
+        points = sum(bet_points)
                 
         standing_predictions.append({
             'user': user,
             'teams': teams,
+            'bet_points': bet_points,
+            'points': points,
             'top_scorer': user_top_scorer,
-            'most_assists': user_most_assists,
-            'points': points
+            'most_assists': user_most_assists
         })
     
     teams = []
     for i, team in enumerate(current_standings):
-        teams.append([team])
+        teams.append([(team, 0)])
         for row in standing_predictions:
-            teams[i].append(row['teams'][i])
+            teams[i].append((row['teams'][i], row['bet_points'][i]))
         
     # context = {'result_2022': result_2022, 'current_standings': current_standings, 'prizes_8': prizes_8, 'prizes_10': prizes_10}
     context = {'competition': competition, 'standing_predictions': standing_predictions, 'teams': teams, 'top_scorer': top_scorer, 'most_assists': most_assists}
