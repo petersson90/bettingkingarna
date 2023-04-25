@@ -317,7 +317,7 @@ def standing_prediction(request, competition_id):
         # print(form_data)
         teams = [Team.objects.get(id=team_id) for team_id in standing_prediction.standing.split(',')]
         if competition_id == 3:
-            current_standings = [Team.objects.get(id=team_id) for team_id in '23,1,11,3,15,4,6,8,5,29,24,13,18,30,22,7'.split(',')]
+            current_standings = [Team.objects.get(id=team_id) for team_id in '1,23,4,18,11,15,3,6,5,29,24,8,13,7,30,22'.split(',')]
         else:
             current_standings = []
         
