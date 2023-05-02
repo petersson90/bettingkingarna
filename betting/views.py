@@ -375,7 +375,7 @@ def standingPredictionsList(request, competition_id):
     
     if competition_id == 3:
         current_standings = [Team.objects.get(id=team_id) for team_id in '1,23,18,4,11,3,15,6,8,5,29,30,24,7,13,22'.split(',')]
-        top_scorer = 'Isaac Kiese Thelin & Benie Traoré'
+        top_scorer = 'Isaac Kiese Thelin'
         most_assists = 'Lars Olden Larsen'
     else:
         current_standings = []
