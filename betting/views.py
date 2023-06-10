@@ -317,7 +317,7 @@ def standing_prediction(request, competition_id):
         # print(form_data)
         teams = [Team.objects.get(id=team_id) for team_id in standing_prediction.standing.split(',')]
         if competition_id == 3:
-            current_standings = [Team.objects.get(id=team_id) for team_id in '1,18,23,11,30,15,4,3,6,5,29,22,7,8,13,24'.split(',')]
+            current_standings = [Team.objects.get(id=team_id) for team_id in '1,18,23,3,30,4,11,6,29,15,5,13,8,22,7,24'.split(',')]
         else:
             current_standings = []
         
@@ -374,8 +374,8 @@ def standingPredictionsList(request, competition_id):
     all_users = StandingPrediction.objects.values('user').filter(competition=competition_id).order_by('user__first_name')
     
     if competition_id == 3:
-        current_standings = [Team.objects.get(id=team_id) for team_id in '1,18,23,11,30,15,4,3,6,5,29,22,7,8,13,24'.split(',')]
-        top_scorer = 'Isaac Kiese Thelin & Bénie Traoré'
+        current_standings = [Team.objects.get(id=team_id) for team_id in '1,18,23,3,30,4,11,6,29,15,5,13,8,22,7,24'.split(',')]
+        top_scorer = 'Bénie Traoré'
         most_assists = 'Mikkel Rygaard Jensen'
     else:
         current_standings = []
