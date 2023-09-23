@@ -10,7 +10,7 @@ from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm
 from .models import Team, Competition, Game, Bet, StandingPrediction
 
 ALLSVENSKAN_2023 = '1,18,23,3,6,11,15,4,5,29,22,30,7,13,8,24'
-TOP_SCORER_2023 = 'Isaac Kiese Thelin & Bénie Traoré'
+TOP_SCORER_2023 = 'Isaac Kiese Thelin'
 MOST_ASSISTS_2023 = 'Mikkel Rygaard Jensen'
 
 # Create your views here.
@@ -288,7 +288,12 @@ def standingsList(request):
     
     max_total = 0
     for row in current_standings:
-        total_points = row['points'] + row['table_points']
+        row['extra_bet'] = 0
+        if row['top_scorer'] in TOP_SCORER_2023:
+            row['extra_bet'] += 6
+        if row['most_assists'] in MOST_ASSISTS_2023:
+            row['extra_bet'] += 6
+        total_points = row['points'] + row['table_points'] + row['extra_bet']
         row['total_points'] = total_points
         if total_points > max_total:
             max_total = total_points
