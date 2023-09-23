@@ -127,3 +127,15 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+fivethirtyeight.py
+fivethirtyeight/20230330.html
+fivethirtyeight/20230403.html
+fivethirtyeight/20230410.html
+fivethirtyeight/20230417.html
+fivethirtyeight/20230424.html
+fivethirtyeight/20230503.html
+fivethirtyeight/20230509.html
+fivethirtyeight/20230515.html
+fivethirtyeight/20230524.html
+fivethirtyeight/20230529.html
+fivethirtyeight/20230605.html
