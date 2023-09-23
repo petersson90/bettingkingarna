@@ -1,14 +1,17 @@
+from datetime import datetime, timezone
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models import Sum, Count
-from django.http import HttpResponse
+from django.db.models import Count
 from django.shortcuts import render, redirect
-from .models import Team, Competition, Game, Bet, StandingPrediction
+from django.forms import ValidationError
 from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm
-from django.forms import ValidationError
-from datetime import datetime, timezone
+from .models import Team, Competition, Game, Bet, StandingPrediction
+
+ALLSVENSKAN_2023 = '1,18,23,3,6,11,15,4,5,29,22,30,7,13,8,24'
+TOP_SCORER_2023 = 'Isaac Kiese Thelin & Bénie Traoré'
+MOST_ASSISTS_2023 = 'Mikkel Rygaard Jensen'
 
 # Create your views here.
 
@@ -36,6 +39,7 @@ def loginPage(request):
         
     context = {}
     return render(request, 'betting/login.html', context)
+
 
 def logoutUser(request):
     logout(request)
@@ -161,6 +165,7 @@ def deleteBet(request, game_id, bet_id):
     context = {'obj': bet}
     return render(request, 'betting/delete.html', context)
 
+
 def standingsList(request):
     current_datetime = datetime.now(timezone.utc)
      
@@ -256,19 +261,34 @@ def standingsList(request):
             else:
                 goal_diff += (bet.away_goals - bet.home_goals) - (bet.game.away_goals - bet.game.home_goals)
                 goals_scored_diff += bet.away_goals - bet.game.away_goals
+                
+        user_standing_prediction = StandingPrediction.objects.get(user=user.id, competition=3)
+        teams = [Team.objects.get(id=team_id) for team_id in user_standing_prediction.standing.split(',')]
+        user_top_scorer = user_standing_prediction.top_scorer
+        user_most_assists = user_standing_prediction.most_assists
         
+        competition_standings = [Team.objects.get(id=team_id) for team_id in ALLSVENSKAN_2023.split(',')]
+        
+        bet_points = []
+        for position, team in enumerate(teams):
+            diff = position - competition_standings.index(team)
+            bet_points.append(-abs(diff))
+        table_points = sum(bet_points)
         
         current_standings.append({
             'user': user,
             'total_bets': row['total_bets'],
             'points': points,
+            'table_points': table_points,
+            'top_scorer': user_top_scorer,
+            'most_assists': user_most_assists,
             'goal_diff': goal_diff,
             'goals_scored_diff': goals_scored_diff,
         })
     
     max_total = 0
     for row in current_standings:
-        total_points = row['points'] # + row['table_points']
+        total_points = row['points'] + row['table_points']
         row['total_points'] = total_points
         if total_points > max_total:
             max_total = total_points
@@ -317,7 +337,7 @@ def standing_prediction(request, competition_id):
         # print(form_data)
         teams = [Team.objects.get(id=team_id) for team_id in standing_prediction.standing.split(',')]
         if competition_id == 3:
-            current_standings = [Team.objects.get(id=team_id) for team_id in '18,23,1,11,3,6,15,4,30,5,29,13,8,22,7,24'.split(',')]
+            current_standings = [Team.objects.get(id=team_id) for team_id in ALLSVENSKAN_2023.split(',')]
         else:
             current_standings = []
         
@@ -374,9 +394,9 @@ def standingPredictionsList(request, competition_id):
     all_users = StandingPrediction.objects.values('user').filter(competition=competition_id).order_by('user__first_name')
     
     if competition_id == 3:
-        current_standings = [Team.objects.get(id=team_id) for team_id in '18,23,1,11,3,6,15,4,30,5,29,13,8,22,7,24'.split(',')]
-        top_scorer = 'Isaac Kiese Thelin & Bénie Traoré'
-        most_assists = 'Mikkel Rygaard Jensen'
+        current_standings = [Team.objects.get(id=team_id) for team_id in ALLSVENSKAN_2023.split(',')]
+        top_scorer = TOP_SCORER_2023
+        most_assists = MOST_ASSISTS_2023
     else:
         current_standings = []
         top_scorer = '',
@@ -385,7 +405,7 @@ def standingPredictionsList(request, competition_id):
     standing_predictions = []
     for row in all_users:
         user = CustomUser.objects.get(pk=row['user'])
-                
+        
         user_standing_prediction = StandingPrediction.objects.get(user=user.id, competition=competition_id)
         teams = [Team.objects.get(id=team_id) for team_id in user_standing_prediction.standing.split(',')]
         user_top_scorer = user_standing_prediction.top_scorer
