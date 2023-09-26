@@ -9,7 +9,7 @@ from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm
 from .models import Team, Competition, Game, Bet, StandingPrediction
 
-ALLSVENSKAN_2023 = '1,18,23,3,6,11,15,4,5,29,22,30,7,13,8,24'
+ALLSVENSKAN_2023 = '1,18,23,3,6,4,11,15,5,22,29,7,30,13,8,24'
 TOP_SCORER_2023 = 'Isaac Kiese Thelin'
 MOST_ASSISTS_2023 = 'Mikkel Rygaard Jensen'
 
