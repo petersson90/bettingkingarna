@@ -1,58 +1,57 @@
+from datetime import datetime, timezone
 from django.conf import settings
 from django.db import models
 from django.db.models import Case, When
-from datetime import datetime, timezone
 
 # Create your models here.
 class Team(models.Model):
+    ''' A team with related details '''
     name = models.CharField(max_length=100)
-    
+
     class Meta:
         ordering = [Case(When(id=1, then=0), default=1), 'name']
-        
+
     def __str__(self):
         return f'{self.name}'
-    
-    def number_of_wins(self):
-        wins = 0
-        for game in self.home_games.all():
-            if game.threeway() == '1':
-                wins += 1
-        for game in self.away_games.all():
-            if game.threeway() == '2':
-                wins += 1
-        return wins
 
 
 class Competition(models.Model):
+    ''' A competition with related details '''
     name = models.CharField(max_length=100)
+    # start_date = models.DateField()
+    # end_date = models.DateField()
     season = models.CharField(max_length=5)
-    teams = models.ManyToManyField(Team)
-    
+    teams = models.ManyToManyField(Team, related_name='competitions')
+
     def __str__(self):
         return f'{self.name} {self.season}'
 
 
 class Game(models.Model):
+    ''' A game with related details '''
     competition = models.ForeignKey(Competition, on_delete=models.PROTECT, related_name="games")
     home_team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='home_games')
     away_team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='away_games')
+    start_time = models.DateTimeField(help_text='Format: 2023-05-01 19:00:00')
+    # location = models.CharField(max_length=200)
     home_goals = models.PositiveSmallIntegerField(blank=True, null=True)
     away_goals = models.PositiveSmallIntegerField(blank=True, null=True)
-    start_time = models.DateTimeField(help_text='Format: 2023-05-01 19:00:00')
-    
+
     def __str__(self):
         return f'{self.home_team} - {self.away_team}'
-    
+
     def has_started(self):
+        ''' True if the start time of the game is in the past '''
         return self.start_time < datetime.now(timezone.utc)
-    
+
     def result(self):
+        ''' Returns the game result displayed as home_goals-away_goals'''
         if self.home_goals is None or self.away_goals is None:
             return None
         return f'{self.home_goals}-{self.away_goals}'
-    
+
     def threeway(self):
+        ''' Returns the game result as 1 (home win), X (draw) or 2 (away win)'''
         if self.home_goals is None or self.away_goals is None:
             return None
         if self.home_goals > self.away_goals:
@@ -64,6 +63,7 @@ class Game(models.Model):
 
 
 class Bet(models.Model):
+    ''' A bet for a specific game and user '''
     game = models.ForeignKey(Game, on_delete=models.PROTECT, related_name='bets')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     home_goals = models.PositiveSmallIntegerField()
@@ -71,32 +71,36 @@ class Bet(models.Model):
     # Hidden fields to keep track of creation and update time
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['user', 'game'], name='one_bet_per_user_per_game')
         ]
-        
+
     def save(self, *args, **kwargs):
+        ''' Update of the save method to restrict saving after the game has started '''
         if self.game.start_time <= datetime.now(timezone.utc):
             raise ValueError("Cannot save bet for a game that has already started.")
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return f'{self.game}: {self.result()}'
-    
+
     def result(self):
+        ''' Returns the result in the bet '''
         return f'{self.home_goals}-{self.away_goals}'
-    
+
     def threeway(self):
+        ''' Returns the bet result as 1 (home win), X (draw) or 2 (away win) '''
         if self.home_goals > self.away_goals:
             return '1'
         elif self.home_goals == self.away_goals:
             return 'X'
         else:
             return '2'
-    
+
     def points(self):
+        ''' Calculates the points for each bet '''
         if not self.game.has_started():
             return None
         points = 0
@@ -114,6 +118,7 @@ class Bet(models.Model):
 
 
 class StandingPrediction(models.Model):
+    ''' A bet for the final standings of a specific competition '''
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     competition = models.ForeignKey(Competition, on_delete=models.PROTECT)
     standing = models.CharField(max_length=100)
@@ -122,13 +127,14 @@ class StandingPrediction(models.Model):
     # Hidden fields to keep track of creation and update time
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['user', 'competition'], name='one_bet_per_user_per_competition')
         ]
 
     def calculate_points(self, actual_standing: list[Team]):
+        ''' Returns the points for the standings bet '''
         points = 0
         predicted_standing = [Team.objects.get(team_id) for team_id in self.standing.split(',')]
         for position, team in enumerate(predicted_standing):
