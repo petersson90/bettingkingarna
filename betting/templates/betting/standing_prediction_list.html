@@ -18,7 +18,7 @@
                 <tr>
                     <td>{{ forloop.counter }}</td>
                     {% for team in team_list %}
-                        <td class="text-nowrap">
+                        <td class="text-nowrap {% if team.1 == 0 %} text-bg-success {% elif team.1 < -5 %} text-bg-danger {% elif team.1 < -2 %} text-bg-warning {% endif %}">
                             <div class="d-flex align-items-start">
                                 <p>{{ team.0 }}</p>
                                 {% if not forloop.first %}<span class="ms-auto ps-1">{{ team.1 }}</span>{% endif %}
