@@ -16,7 +16,7 @@ admin.site.register(Team, TeamAdmin)
 
 class BetInline(admin.TabularInline):
     model = Bet
-    fields = ['game', 'user', 'result', 'created', 'updated', 'is_updated', 'points']
+    fields = ['game', 'user', 'result', 'created', 'updated', 'points']
     readonly_fields = fields
     extra = 0
 
