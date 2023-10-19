@@ -9,7 +9,7 @@ admin.site.register(Competition, CompetitionAdmin)
 
 
 class TeamAdmin(admin.ModelAdmin):
-    list_display = ('name')
+    list_display = ['name']
 
 admin.site.register(Team, TeamAdmin)
 
