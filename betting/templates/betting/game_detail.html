@@ -30,7 +30,7 @@
             <td>{% if game.has_started or request.user == bet.user %}{{ bet.result }}{% endif %}</td>
             <td>{% if game.has_started %}{{ bet.points|default_if_none:"-" }}{% endif %}</td>
             <td>{{ bet.created }}</td>
-            <td>{% if bet.created != bet.updated %}{{ bet.updated }}{% endif %}</td>
+            <td>{% if bet.is_updated %}{{ bet.updated }}{% endif %}</td>
             <td>{% if not game.has_started and request.user == bet.user %}<a href="{% url 'betting:delete-bet' game.id bet.id %}">Ta bort</a>{% endif %}</td>
         </tr>
         {% endfor %}
