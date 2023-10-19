@@ -88,6 +88,8 @@ class Bet(models.Model):
 
     def is_updated(self):
         ''' Returns true if the bet has been updated '''
+        if self.updated is None or self.created is None:
+            return None
         return self.updated > self.created
 
     def result(self):
