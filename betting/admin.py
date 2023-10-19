@@ -9,7 +9,7 @@ admin.site.register(Competition, CompetitionAdmin)
 
 
 class TeamAdmin(admin.ModelAdmin):
-    list_display = ('name', 'number_of_wins')
+    list_display = ('name')
 
 admin.site.register(Team, TeamAdmin)
 
@@ -19,7 +19,7 @@ class BetInline(admin.TabularInline):
     fields = ('game', 'user', 'result')
     readonly_fields = ('game', 'user', 'result')
     extra = 0
-    
+
 class GameAdmin(admin.ModelAdmin):
     list_display = ('start_time', 'home_team', 'away_team', 'result')
     list_filter = ['start_time', 'competition', 'home_team', 'away_team']
