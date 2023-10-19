@@ -86,12 +86,6 @@ class Bet(models.Model):
     def __str__(self):
         return f'{self.game}: {self.result()}'
 
-    def is_updated(self):
-        ''' Returns true if the bet has been updated '''
-        if self.updated is None or self.created is None:
-            return None
-        return self.updated != self.created
-
     def result(self):
         ''' Returns the result in the bet '''
         return f'{self.home_goals}-{self.away_goals}'
