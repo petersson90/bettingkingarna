@@ -2,6 +2,10 @@
 {% load static %}
 
 {% block content %}
+{% if perms.betting.add_team %}
+<h2>Skapa lag</h2>
+<p><a class="nav-link" href="{% url 'betting:create-team' %}">Skapa lag</a></p>
+{% endif %}
 <h2>Inlagda lag</h2>
 <section class="team-list">
     {% if team_list %}
