@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from django.utils import timezone
 from django.conf import settings
 from django.db import models
 from django.db.models import Case, When
@@ -42,7 +42,7 @@ class Game(models.Model):
 
     def has_started(self):
         ''' True if the start time of the game is in the past '''
-        return self.start_time < datetime.now(timezone.utc)
+        return self.start_time < timezone.now()
 
     def result(self):
         ''' Returns the game result displayed as home_goals-away_goals'''
@@ -79,7 +79,7 @@ class Bet(models.Model):
 
     def save(self, *args, **kwargs):
         ''' Update of the save method to restrict saving after the game has started '''
-        if self.game.start_time <= datetime.now(timezone.utc):
+        if self.game.start_time <= timezone.now():
             raise ValueError("Cannot save bet for a game that has already started.")
         super().save(*args, **kwargs)
 
@@ -88,7 +88,7 @@ class Bet(models.Model):
 
     def is_updated(self):
         ''' Returns true if the bet has been updated '''
-        return self.updated > self.created
+        return self.updated - self.created > timezone.timedelta(seconds=1)
 
     def result(self):
         ''' Returns the result in the bet '''
