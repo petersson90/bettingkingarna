@@ -1,6 +1,8 @@
 from django.utils import timezone
 from django.conf import settings
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.db.models import Case, When
 
 # Create your models here.
@@ -34,8 +36,8 @@ class Game(models.Model):
     away_team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='away_games')
     start_time = models.DateTimeField(help_text='Format: 2023-05-01 19:00:00')
     # location = models.CharField(max_length=200)
-    home_goals = models.PositiveSmallIntegerField(blank=True, null=True)
-    away_goals = models.PositiveSmallIntegerField(blank=True, null=True)
+    home_goals = models.PositiveSmallIntegerField(default=0)
+    away_goals = models.PositiveSmallIntegerField(default=0)
 
     def __str__(self):
         return f'{self.home_team} - {self.away_team}'
@@ -66,8 +68,9 @@ class Bet(models.Model):
     ''' A bet for a specific game and user '''
     game = models.ForeignKey(Game, on_delete=models.PROTECT, related_name='bets')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
-    home_goals = models.PositiveSmallIntegerField()
-    away_goals = models.PositiveSmallIntegerField()
+    home_goals = models.PositiveSmallIntegerField(default=0)
+    away_goals = models.PositiveSmallIntegerField(default=0)
+    points = models.PositiveSmallIntegerField(default=0)
     # Hidden fields to keep track of creation and update time
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -76,12 +79,6 @@ class Bet(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['user', 'game'], name='one_bet_per_user_per_game')
         ]
-
-    def save(self, *args, **kwargs):
-        ''' Update of the save method to restrict saving after the game has started '''
-        if self.game.start_time <= timezone.now():
-            raise ValueError("Cannot save bet for a game that has already started.")
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.game}: {self.result()}'
@@ -103,10 +100,10 @@ class Bet(models.Model):
         else:
             return '2'
 
-    def points(self):
+    def calculate_points(self):
         ''' Calculates the points for each bet '''
         if not self.game.has_started():
-            return None
+            return 0
         points = 0
         if self.threeway() == self.game.threeway():
             points += 3
@@ -119,6 +116,19 @@ class Bet(models.Model):
         if self.result() == self.game.result():
             points += 1
         return points
+
+    def save(self, *args, game_updated=False, **kwargs):
+        ''' Update of the save method to restrict saving after the game has started '''
+        if self.game.start_time <= timezone.now() and not game_updated:
+            raise ValueError("Cannot save bet for a game that has already started.")
+        self.points = self.calculate_points()
+        super().save(*args, **kwargs)
+
+
+@receiver(post_save, sender=Game)
+def update_bet_points(sender, instance, **kwargs):
+    for bet in instance.bets.all():
+        bet.save(game_updated=True)
 
 
 class StandingPrediction(models.Model):
