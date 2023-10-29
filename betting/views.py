@@ -186,7 +186,7 @@ def standings_list(request):
 
     result_2022 = []
     for row in all_users:
-        # print(bet.user, bet.game, bet.points())
+        # print(bet.user, bet.game, bet.points)
         user = CustomUser.objects.get(pk=row['user'])
 
         user_bets = Bet.objects.exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1)
@@ -195,7 +195,7 @@ def standings_list(request):
         goal_diff = 0
         goals_scored_diff = 0
         for bet in user_bets:
-            points += bet.points()
+            points += bet.points
             if bet.game.home_team.id == 1:
                 goal_diff += (bet.home_goals - bet.away_goals) - (bet.game.home_goals - bet.game.away_goals)
                 goals_scored_diff += bet.home_goals - bet.game.home_goals
@@ -265,7 +265,7 @@ def standings_list(request):
         goal_diff = 0
         goals_scored_diff = 0
         for bet in user_bets:
-            points += bet.points()
+            points += bet.points
             if bet.game.home_team.id == 1:
                 goal_diff += (bet.home_goals - bet.away_goals) - (bet.game.home_goals - bet.game.away_goals)
                 goals_scored_diff += bet.home_goals - bet.game.home_goals
