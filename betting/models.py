@@ -122,7 +122,7 @@ class Bet(models.Model):
         if self.game.start_time <= timezone.now() and not game_updated:
             raise ValueError("Cannot save bet for a game that has already started.")
         if not game_updated:
-            self.updated_at = timezone.now()
+            self.updated = timezone.now()
         self.points = self.calculate_points()
         super().save(*args, **kwargs)
 
