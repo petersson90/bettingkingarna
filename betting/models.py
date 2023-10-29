@@ -73,7 +73,7 @@ class Bet(models.Model):
     points = models.PositiveSmallIntegerField(default=0)
     # Hidden fields to keep track of creation and update time
     created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+    updated = models.DateTimeField()
 
     class Meta:
         constraints = [
@@ -121,6 +121,8 @@ class Bet(models.Model):
         ''' Update of the save method to restrict saving after the game has started '''
         if self.game.start_time <= timezone.now() and not game_updated:
             raise ValueError("Cannot save bet for a game that has already started.")
+        if not game_updated:
+            self.updated_at = timezone.now()
         self.points = self.calculate_points()
         super().save(*args, **kwargs)
 
