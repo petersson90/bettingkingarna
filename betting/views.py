@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, permission_required
@@ -59,7 +59,7 @@ def team_list(request):
 
 def game_list(request):
     ''' Listing all past and upcoming games in the current year '''
-    current_datetime = datetime.now(timezone.utc)
+    current_datetime = timezone.now()
 
     context = {
         'past_games': Game.objects.filter(start_time__lt=current_datetime, start_time__year=current_datetime.year).order_by('-start_time'),
@@ -178,7 +178,7 @@ def delete_bet(request, game_id, bet_id):
 
 def standings_list(request):
     ''' Summary of current standings in the bet '''
-    current_datetime = datetime.now(timezone.utc)
+    current_datetime = timezone.now()
 
     all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1).annotate(total_bets=Count('game'))
     # filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1)
@@ -406,7 +406,7 @@ def standing_prediction(request, competition_id):
 
 def standing_predictions_list(request, competition_id):
     ''' Show all bets regarding the current standings for a specific competition '''
-    # current_datetime = datetime.now(timezone.utc)
+    # current_datetime = timezone.now()
 
     competition = Competition.objects.get(id=competition_id)
     all_users = StandingPrediction.objects.values('user').filter(competition=competition_id).order_by('user__first_name')
