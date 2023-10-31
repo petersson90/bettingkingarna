@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.forms import ValidationError
 from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm
-from .models import Team, Competition, Game, Bet, StandingPrediction
+from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPredictionTeam
 
 ALLSVENSKAN_2023 = '18,1,23,3,5,6,4,11,15,13,7,29,22,30,8,24'
 TOP_SCORER_2023 = 'Isaac Kiese Thelin'
@@ -406,36 +406,34 @@ def standing_prediction(request, competition_id):
 
 def standing_predictions_list(request, competition_id):
     ''' Show all bets regarding the current standings for a specific competition '''
-    competition = get_object_or_404(Competition, pk=competition_id)
+    competition = get_object_or_404(Competition.objects.prefetch_related('teams'), pk=competition_id)
 
-    all_users = StandingPrediction.objects.values('user').filter(competition=competition_id).order_by('user__first_name')
+    all_standing_predictions = StandingPrediction.objects.select_related('user').prefetch_related('standingpredictionteam_set__team').filter(competition=competition).order_by('user__first_name')
 
     if competition_id == 3:
-        current_standings = [Team.objects.get(pk=team_id) for team_id in ALLSVENSKAN_2023.split(',')]
+        sort_order_list = [int(team_id) for team_id in ALLSVENSKAN_2023.split(',')]
+        current_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
         top_scorer = TOP_SCORER_2023
         most_assists = MOST_ASSISTS_2023
     else:
         current_standings = []
-        top_scorer = '',
+        top_scorer = ''
         most_assists = ''
 
     standing_predictions = []
-    for row in all_users:
-        user = CustomUser.objects.get(pk=row['user'])
-
-        user_standing_prediction = StandingPrediction.objects.get(user=user.id, competition=competition_id)
-        teams = [Team.objects.get(pk=team_id) for team_id in user_standing_prediction.standing.split(',')]
-        user_top_scorer = user_standing_prediction.top_scorer
-        user_most_assists = user_standing_prediction.most_assists
+    for standing_prediction in all_standing_predictions:
+        teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in standing_prediction.standingpredictionteam_set.all()]
+        user_top_scorer = standing_prediction.top_scorer
+        user_most_assists = standing_prediction.most_assists
 
         bet_points = []
-        for position, team in enumerate(teams):
-            diff = position - current_standings.index(team)
+        for position, team in teams:
+            diff = position - current_standings.index(team) - 1
             bet_points.append(-abs(diff))
         points = sum(bet_points)
 
         standing_predictions.append({
-            'user': user,
+            'user': standing_prediction.user,
             'teams': teams,
             'bet_points': bet_points,
             'points': points,
@@ -445,7 +443,7 @@ def standing_predictions_list(request, competition_id):
 
     teams = []
     for i, team in enumerate(current_standings):
-        teams.append([(team, 0)])
+        teams.append([((i+1, team), 0)])
         for row in standing_predictions:
             teams[i].append((row['teams'][i], row['bet_points'][i]))
 
