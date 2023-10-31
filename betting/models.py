@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_save
@@ -31,7 +32,7 @@ class Competition(models.Model):
 
 class Game(models.Model):
     ''' A game with related details '''
-    competition = models.ForeignKey(Competition, on_delete=models.PROTECT, related_name="games")
+    competition = models.ForeignKey(Competition, on_delete=models.PROTECT, related_name='games')
     home_team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='home_games')
     away_team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='away_games')
     start_time = models.DateTimeField(help_text='Format: 2023-05-01 19:00:00')
@@ -77,7 +78,10 @@ class Bet(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['user', 'game'], name='one_bet_per_user_per_game')
+            models.UniqueConstraint(
+                fields=['user', 'game'],
+                name='one_bet_per_user_per_game'
+            )
         ]
 
     def __str__(self):
@@ -120,7 +124,7 @@ class Bet(models.Model):
     def save(self, *args, game_updated=False, **kwargs):
         ''' Update of the save method to restrict saving after the game has started '''
         if self.game.start_time <= timezone.now() and not game_updated:
-            raise ValueError("Cannot save bet for a game that has already started.")
+            raise ValidationError('Cannot save bet for a game that has already started.')
         if not game_updated:
             self.updated = timezone.now()
         self.points = self.calculate_points()
@@ -146,7 +150,10 @@ class StandingPrediction(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['user', 'competition'], name='one_bet_per_user_per_competition')
+            models.UniqueConstraint(
+                fields=['user', 'competition'],
+                name='one_bet_per_user_per_competition'
+            )
         ]
 
     def calculate_points(self, actual_standing: list[Team]):
@@ -157,3 +164,37 @@ class StandingPrediction(models.Model):
             diff = position - actual_standing.index(team)
             points -= abs(diff)
         return points
+
+
+class StandingPredictionTeam(models.Model):
+    ''' Enables a list of teams to be connected to a StandingPrediction '''
+    standing_prediction = models.ForeignKey(StandingPrediction, on_delete=models.PROTECT)
+    team = models.ForeignKey(Team, on_delete=models.PROTECT)
+    position = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['standing_prediction', 'position'],
+                name='unique_position_per_prediction'
+            ),
+            models.UniqueConstraint(
+                fields=['standing_prediction', 'team'],
+                name='unique_team_per_prediction'
+            )
+        ]
+
+    def clean(self):
+        super().clean()
+
+        # Check if the selected team belongs to any of the related competitions of the prediction
+        if not self.team.competitions.filter(id=self.standing_prediction.competition.id).exists():
+            raise ValidationError(f'Selected team does not belong to this competition')
+
+        max_position = self.standing_prediction.competition.teams.count()
+        if self.position < 1 or self.position > max_position:
+            raise ValidationError(f'Position must be between 1 and {max_position}')
+
+    def save(self, *args, **kwargs):
+        self.clean()  # Validate the team and position before saving
+        super(StandingPredictionTeam, self).save(*args, **kwargs)

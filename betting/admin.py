@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Competition, Team, Game, Bet, StandingPrediction
+from .models import Competition, Team, Game, Bet, StandingPrediction, StandingPredictionTeam
 
 # Register your models here.
 class CompetitionAdmin(admin.ModelAdmin):
@@ -34,8 +34,14 @@ admin.site.register(Game, GameAdmin)
 
 # admin.site.register(Bet, BetAdmin)
 
+class StandingPredictionTeamInline(admin.TabularInline):
+    model = StandingPredictionTeam
+    readonly_fields = ['position', 'team']
+    extra = 0
+
 class StandingPredictionAdmin(admin.ModelAdmin):
     list_display = ['competition', 'user']
     list_filter = ['user']
+    inlines = [StandingPredictionTeamInline]
 
 admin.site.register(StandingPrediction, StandingPredictionAdmin)
