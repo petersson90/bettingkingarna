@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.forms import ValidationError
 from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm
-from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPredictionTeam
+from .models import Team, Competition, Game, Bet, StandingPrediction
 
 ALLSVENSKAN_2023 = '18,1,23,3,5,6,4,11,15,13,7,29,22,30,8,24'
 TOP_SCORER_2023 = 'Isaac Kiese Thelin'
@@ -181,15 +181,13 @@ def standings_list(request):
     current_datetime = timezone.now()
 
     all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1).annotate(total_bets=Count('game'))
-    # filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1)
-    # print(all_users)
 
     result_2022 = []
     for row in all_users:
         # print(bet.user, bet.game, bet.points)
         user = CustomUser.objects.get(pk=row['user'])
 
-        user_bets = Bet.objects.exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1)
+        user_bets = Bet.objects.select_related('game', 'game__home_team', 'game__away_team').exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1)
         # print(user_bets)
         points = 0
         goal_diff = 0
@@ -255,11 +253,14 @@ def standings_list(request):
 
     all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year).annotate(total_bets=Count('game'))
 
+    competition = Competition.objects.get(pk=3)
+    sort_order_list = [int(team_id) for team_id in ALLSVENSKAN_2023.split(',')]
+    competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
     current_standings = []
     for row in all_users:
         user = CustomUser.objects.get(pk=row['user'])
 
-        user_bets = Bet.objects.exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year)
+        user_bets = Bet.objects.select_related('game', 'game__home_team', 'game__away_team').exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year)
 
         points = 0
         goal_diff = 0
@@ -273,16 +274,14 @@ def standings_list(request):
                 goal_diff += (bet.away_goals - bet.home_goals) - (bet.game.away_goals - bet.game.home_goals)
                 goals_scored_diff += bet.away_goals - bet.game.away_goals
 
-        user_standing_prediction = StandingPrediction.objects.get(user=user.id, competition=3)
-        teams = [Team.objects.get(pk=team_id) for team_id in user_standing_prediction.standing.split(',')]
+        user_standing_prediction = StandingPrediction.objects.select_related('user').prefetch_related('standingpredictionteam_set__team').get(user=user.id, competition=competition)
+        teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in user_standing_prediction.standingpredictionteam_set.all()]
         user_top_scorer = user_standing_prediction.top_scorer
         user_most_assists = user_standing_prediction.most_assists
 
-        competition_standings = [Team.objects.get(pk=team_id) for team_id in ALLSVENSKAN_2023.split(',')]
-
         bet_points = []
-        for position, team in enumerate(teams):
-            diff = position - competition_standings.index(team)
+        for position, team in teams:
+            diff = position - competition_standings.index(team) - 1
             bet_points.append(-abs(diff))
         table_points = sum(bet_points)
 
