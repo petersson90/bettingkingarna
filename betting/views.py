@@ -62,8 +62,8 @@ def game_list(request):
     current_datetime = timezone.now()
 
     context = {
-        'past_games': Game.objects.filter(start_time__lt=current_datetime, start_time__year=current_datetime.year).order_by('-start_time'),
-        'upcoming_games': Game.objects.filter(start_time__gte=current_datetime, start_time__year=current_datetime.year).order_by('start_time')
+        'past_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__lt=current_datetime, start_time__year=current_datetime.year).order_by('-start_time'),
+        'upcoming_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__gte=current_datetime, start_time__year=current_datetime.year).order_by('start_time')
     }
 
     return render(request, 'betting/game_list.html', context)
