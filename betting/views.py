@@ -72,7 +72,7 @@ def game_list(request):
 @login_required(login_url='betting:login')
 def game_details(request, game_id):
     ''' Shows details about a specific game '''
-    game = get_object_or_404(Game, pk=game_id)
+    game = get_object_or_404(Game.objects.select_related('home_team', 'away_team').prefetch_related('bets', 'bets__user'), pk=game_id)
     try:
         bet = Bet.objects.get(user=request.user, game_id=game_id)
     except Bet.DoesNotExist:
