@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Count
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.forms import ValidationError
 from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm
@@ -72,7 +72,7 @@ def game_list(request):
 @login_required(login_url='betting:login')
 def game_details(request, game_id):
     ''' Shows details about a specific game '''
-    game = Game.objects.get(pk=game_id)
+    game = get_object_or_404(Game, pk=game_id)
     try:
         bet = Bet.objects.get(user=request.user, game_id=game_id)
     except Bet.DoesNotExist:
@@ -109,7 +109,7 @@ def create_game(request):
 @permission_required('betting.change_game', login_url='betting:login')
 def update_game(request, game_id):
     ''' Update details about a specific game '''
-    game = Game.objects.get(pk=game_id)
+    game = get_object_or_404(Game, pk=game_id)
     form = GameForm(instance=game)
 
     if request.method == 'POST':
@@ -142,7 +142,7 @@ def create_team(request):
 @permission_required('betting.change_team', login_url='betting:login')
 def update_team(request, team_id):
     ''' Update details about a specific team '''
-    team = Team.objects.get(pk=team_id)
+    team = get_object_or_404(Team, pk=team_id)
     form = TeamForm(instance=team)
 
     if request.method == 'POST':
@@ -158,7 +158,7 @@ def update_team(request, team_id):
 @login_required(login_url='betting:login')
 def delete_bet(request, game_id, bet_id):
     ''' Delete a placed bet for a game '''
-    bet = Bet.objects.get(id=bet_id)
+    bet = get_object_or_404(Bet, pk=bet_id)
 
     if bet.game.id != game_id:
         messages.error(request, 'The bet is not related to this game.')
@@ -274,11 +274,11 @@ def standings_list(request):
                 goals_scored_diff += bet.away_goals - bet.game.away_goals
 
         user_standing_prediction = StandingPrediction.objects.get(user=user.id, competition=3)
-        teams = [Team.objects.get(id=team_id) for team_id in user_standing_prediction.standing.split(',')]
+        teams = [Team.objects.get(pk=team_id) for team_id in user_standing_prediction.standing.split(',')]
         user_top_scorer = user_standing_prediction.top_scorer
         user_most_assists = user_standing_prediction.most_assists
 
-        competition_standings = [Team.objects.get(id=team_id) for team_id in ALLSVENSKAN_2023.split(',')]
+        competition_standings = [Team.objects.get(pk=team_id) for team_id in ALLSVENSKAN_2023.split(',')]
 
         bet_points = []
         for position, team in enumerate(teams):
@@ -341,7 +341,7 @@ def standings_list(request):
 @login_required(login_url='betting:login')
 def standing_prediction(request, competition_id):
     ''' Show bet for current user for a specific competition standings '''
-    competition = Competition.objects.get(id=competition_id)
+    competition = get_object_or_404(Competition, pk=competition_id)
     teams = []
     top_scorer = ''
     most_assists = ''
@@ -352,9 +352,9 @@ def standing_prediction(request, competition_id):
         for i, team_id in enumerate(standing_predictions.standing.split(',')):
             form_data[f'position_{i+1}'] = Team.objects.get(pk=team_id)
         # print(form_data)
-        teams = [Team.objects.get(id=team_id) for team_id in standing_predictions.standing.split(',')]
+        teams = [Team.objects.get(pk=team_id) for team_id in standing_predictions.standing.split(',')]
         if competition_id == 3:
-            current_standings = [Team.objects.get(id=team_id) for team_id in ALLSVENSKAN_2023.split(',')]
+            current_standings = [Team.objects.get(pk=team_id) for team_id in ALLSVENSKAN_2023.split(',')]
         else:
             current_standings = []
 
@@ -406,13 +406,12 @@ def standing_prediction(request, competition_id):
 
 def standing_predictions_list(request, competition_id):
     ''' Show all bets regarding the current standings for a specific competition '''
-    # current_datetime = timezone.now()
+    competition = get_object_or_404(Competition, pk=competition_id)
 
-    competition = Competition.objects.get(id=competition_id)
     all_users = StandingPrediction.objects.values('user').filter(competition=competition_id).order_by('user__first_name')
 
     if competition_id == 3:
-        current_standings = [Team.objects.get(id=team_id) for team_id in ALLSVENSKAN_2023.split(',')]
+        current_standings = [Team.objects.get(pk=team_id) for team_id in ALLSVENSKAN_2023.split(',')]
         top_scorer = TOP_SCORER_2023
         most_assists = MOST_ASSISTS_2023
     else:
@@ -425,7 +424,7 @@ def standing_predictions_list(request, competition_id):
         user = CustomUser.objects.get(pk=row['user'])
 
         user_standing_prediction = StandingPrediction.objects.get(user=user.id, competition=competition_id)
-        teams = [Team.objects.get(id=team_id) for team_id in user_standing_prediction.standing.split(',')]
+        teams = [Team.objects.get(pk=team_id) for team_id in user_standing_prediction.standing.split(',')]
         user_top_scorer = user_standing_prediction.top_scorer
         user_most_assists = user_standing_prediction.most_assists
 
