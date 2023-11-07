@@ -40,6 +40,9 @@ class Game(models.Model):
     home_goals = models.PositiveSmallIntegerField(default=0)
     away_goals = models.PositiveSmallIntegerField(default=0)
 
+    class Meta:
+        ordering = ['start_time']
+
     def __str__(self):
         return f'{self.home_team} - {self.away_team}'
 
