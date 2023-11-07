@@ -2,7 +2,8 @@ from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models import Count
+from django.db.models import Q, Count, Sum, Avg
+from django.db.models.functions import Round
 from django.shortcuts import render, redirect, get_object_or_404
 from django.forms import ValidationError
 from accounts.models import CustomUser
@@ -449,3 +450,28 @@ def standing_predictions_list(request, competition_id):
     # context = {'result_2022': result_2022, 'current_standings': current_standings, 'prizes_8': prizes_8, 'prizes_10': prizes_10}
     context = {'competition': competition, 'standing_predictions': standing_predictions, 'teams': teams, 'top_scorer': top_scorer, 'most_assists': most_assists}
     return render(request, 'betting/standing_prediction_list.html', context)
+
+
+def statistics(request, year):
+    ''' Calculates statistics regarding the bet '''
+    current_datetime = timezone.now()
+
+    # Gör summeringen utifrån match istället
+
+    def recent_games(number_of_games):
+        return Game.objects.filter(start_time__lt=current_datetime, start_time__year=year).order_by('-start_time')[:number_of_games].values('id')
+
+    stats_table = Bet.objects.values('user__first_name').filter(game__start_time__lt=current_datetime, game__start_time__year=year).annotate(
+        total_bets=Count('user'),
+        total_points=Sum('points'),
+        average_points=Round(Avg('points'), 2),
+        total_points_last_5=Sum('points', filter=Q(game__in=recent_games(5))),
+        average_points_last_5=Round(Avg('points', filter=Q(game__in=recent_games(5))), 2),
+        total_points_last_10=Sum('points', filter=Q(game__in=recent_games(10))),
+        average_points_last_10=Round(Avg('points', filter=Q(game__in=recent_games(10))), 2),
+        total_points_last_15=Sum('points', filter=Q(game__in=recent_games(15))),
+        average_points_last_15=Round(Avg('points', filter=Q(game__in=recent_games(15))), 2)
+    ).order_by('-total_points')
+
+    context = {'stats_table': stats_table}
+    return render(request, 'betting/statistics.html', context)

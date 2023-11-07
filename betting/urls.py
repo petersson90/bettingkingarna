@@ -16,5 +16,6 @@ urlpatterns = [
     path('game/<int:game_id>/delete-bet/<int:bet_id>/', views.delete_bet, name='delete-bet'),
     path('standings/', views.standings_list, name='list-standings'),
     path('standing-prediction/create/<int:competition_id>/', views.standing_prediction, name='standing-prediction'),
-    path('standing-prediction/<int:competition_id>/', views.standing_predictions_list, name='list-standing-prediction')
+    path('standing-prediction/<int:competition_id>/', views.standing_predictions_list, name='list-standing-prediction'),
+    path('statistics/<int:year>/', views.statistics, name='statistics')
 ]
