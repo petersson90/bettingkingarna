@@ -2,7 +2,7 @@ from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models import Q, Count, Sum, Avg
+from django.db.models import Q, Count, Sum, Avg, Window
 from django.db.models.functions import Round
 from django.shortcuts import render, redirect, get_object_or_404
 from django.forms import ValidationError
@@ -456,8 +456,6 @@ def statistics(request, year):
     ''' Calculates statistics regarding the bet '''
     current_datetime = timezone.now()
 
-    # Gör summeringen utifrån match istället
-
     def recent_games(number_of_games):
         return Game.objects.filter(start_time__lt=current_datetime, start_time__year=year).order_by('-start_time')[:number_of_games].values('id')
 
@@ -473,5 +471,25 @@ def statistics(request, year):
         average_points_last_15=Round(Avg('points', filter=Q(game__in=recent_games(15))), 2)
     ).order_by('-total_points')
 
-    context = {'stats_table': stats_table}
+    # Assuming you have a predefined list of user names or IDs
+    user_list = Bet.objects.values('user__id').filter(game__start_time__lt=current_datetime, game__start_time__year=year).annotate().distinct()
+
+    # Dynamically generate the fields for each user's cumulative points
+    user_cumulative_points = {f'user_{user["user__id"]}_cumulative_points': Window(Sum('bets__points', filter=Q(bets__user__id=user['user__id'])), order_by='start_time') for user in user_list}
+
+    # Create the queryset
+    game_stats = (
+        Game.objects
+        .filter(start_time__lt=current_datetime, start_time__year=year)
+        .prefetch_related('bets', 'bets__user')
+        .select_related('home_team', 'away_team')
+        .annotate(
+            **user_cumulative_points
+        )
+        .values('id', 'start_time', 'home_team__name', 'away_team__name', *user_cumulative_points.keys())
+        .distinct()
+        .order_by('start_time')
+    )
+
+    context = {'stats_table': stats_table, 'game_stats': game_stats}
     return render(request, 'betting/statistics.html', context)
