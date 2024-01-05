@@ -24,7 +24,7 @@
                         <li class="nav-item"><a class="nav-link" href="{% url 'betting:index' %}">Matchbet</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'betting:list-standing-prediction' 3 %}">Tabellbet</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'betting:list-standings' %}">Bettingkingarna-tabell</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'betting:statistics' 2023 %}">Statistik</a></li>
+                        {% comment %} <li class="nav-item"><a class="nav-link" href="{% url 'betting:statistics' 2023 %}">Statistik</a></li> {% endcomment %}
                         {% if perms.betting.add_team %}<li class="nav-item"><a class="nav-link" href="{% url 'betting:list-team' %}">Visa/skapa lag</a></li>{% endif %}
                         {% if perms.betting.add_game %}<li class="nav-item"><a class="nav-link" href="{% url 'betting:create-game' %}">Skapa match</a></li>{% endif %}
                         {% endif %}
