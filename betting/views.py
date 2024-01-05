@@ -452,6 +452,81 @@ def standing_predictions_list(request, competition_id):
     return render(request, 'betting/standing_prediction_list.html', context)
 
 
+def standing_predictions_suggestion(request, competition_id):
+    ''' Suggested rules for the 2024 bet '''
+    competition = get_object_or_404(Competition.objects.prefetch_related('teams'), pk=competition_id)
+
+    all_standing_predictions = StandingPrediction.objects.select_related('user').prefetch_related('standingpredictionteam_set__team').filter(competition=competition).order_by('user__first_name')
+
+    TOP_BOTTOM = 3
+
+    if competition_id == 3:
+        sort_order_list = [int(team_id) for team_id in ALLSVENSKAN_2023.split(',')]
+        current_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
+        top_scorer = TOP_SCORER_2023
+        most_assists = MOST_ASSISTS_2023
+    else:
+        current_standings = []
+        top_scorer = ''
+        most_assists = ''
+
+    current_standings = [(pos, team) for pos, team in enumerate(current_standings, 1)]
+    current_top_teams = current_standings[:TOP_BOTTOM]
+    current_bottom_teams = current_standings[-TOP_BOTTOM:]
+
+    standing_predictions = []
+    for standing_prediction in all_standing_predictions:
+        teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in standing_prediction.standingpredictionteam_set.all()]
+        user_top_scorer = standing_prediction.top_scorer
+        user_most_assists = standing_prediction.most_assists
+
+        top_teams = teams[:TOP_BOTTOM]
+        bottom_teams = teams[-TOP_BOTTOM:]
+
+        teams = top_teams + bottom_teams
+
+        bet_points = []
+        for position, team in top_teams:
+            points = 0
+            if (position, team) in current_top_teams:
+                points = 6
+            elif team in [tup[1] for tup in current_top_teams]:
+                points = 4
+            bet_points.append(points)
+
+        for position, team in bottom_teams:
+            points = 0
+            if (position, team) in current_bottom_teams:
+                points = 6
+            elif team in [tup[1] for tup in current_bottom_teams]:
+                points = 4
+            bet_points.append(points)
+        points = sum(bet_points)
+
+        standing_predictions.append({
+            'user': standing_prediction.user,
+            'teams': teams,
+            'top_teams': top_teams,
+            'bottom_teams': bottom_teams,
+            'bet_points': bet_points,
+            'points': points,
+            'top_scorer': user_top_scorer,
+            'most_assists': user_most_assists
+        })
+
+    teams = []
+
+    current_standings = current_standings[:TOP_BOTTOM] + current_standings[-TOP_BOTTOM:]
+    current_standings = [[((position, team), 0)] for position, team in current_standings]
+
+    for i, _ in enumerate(current_standings):
+        for row in standing_predictions:
+            current_standings[i].append((row['teams'][i], row['bet_points'][i]))
+
+    context = {'competition': competition, 'standing_predictions': standing_predictions, 'teams': current_standings, 'top_scorer': top_scorer, 'most_assists': most_assists}
+    return render(request, 'betting/standing_prediction_suggestion.html', context)
+
+
 def statistics(request, year):
     ''' Calculates statistics regarding the bet '''
     current_datetime = timezone.now()
