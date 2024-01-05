@@ -454,6 +454,8 @@ def standing_predictions_list(request, competition_id):
 
 def standing_predictions_suggestion(request, competition_id):
     ''' Suggested rules for the 2024 bet '''
+    current_datetime = timezone.now() - timezone.timedelta(days=31)
+
     competition = get_object_or_404(Competition.objects.prefetch_related('teams'), pk=competition_id)
 
     all_standing_predictions = StandingPrediction.objects.select_related('user').prefetch_related('standingpredictionteam_set__team').filter(competition=competition).order_by('user__first_name')
@@ -523,7 +525,111 @@ def standing_predictions_suggestion(request, competition_id):
         for row in standing_predictions:
             current_standings[i].append((row['teams'][i], row['bet_points'][i]))
 
-    context = {'competition': competition, 'standing_predictions': standing_predictions, 'teams': current_standings, 'top_scorer': top_scorer, 'most_assists': most_assists}
+    all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year).annotate(total_bets=Count('game'))
+
+    competition = Competition.objects.get(pk=3)
+    sort_order_list = [int(team_id) for team_id in ALLSVENSKAN_2023.split(',')]
+    competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
+    result_2023 = []
+    for row in all_users:
+        user = CustomUser.objects.get(pk=row['user'])
+
+        user_bets = Bet.objects.select_related('game', 'game__home_team', 'game__away_team').exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year)
+
+        points = 0
+        goal_diff = 0
+        goals_scored_diff = 0
+        for bet in user_bets:
+            points += bet.points
+            if bet.game.home_team.id == 1:
+                goal_diff += (bet.home_goals - bet.away_goals) - (bet.game.home_goals - bet.game.away_goals)
+                goals_scored_diff += bet.home_goals - bet.game.home_goals
+            else:
+                goal_diff += (bet.away_goals - bet.home_goals) - (bet.game.away_goals - bet.game.home_goals)
+                goals_scored_diff += bet.away_goals - bet.game.away_goals
+
+        user_standing_prediction = StandingPrediction.objects.select_related('user').prefetch_related('standingpredictionteam_set__team').get(user=user.id, competition=competition)
+        teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in user_standing_prediction.standingpredictionteam_set.all()]
+        user_top_scorer = user_standing_prediction.top_scorer
+        user_most_assists = user_standing_prediction.most_assists
+
+        top_teams = teams[:TOP_BOTTOM]
+        bottom_teams = teams[-TOP_BOTTOM:]
+
+        bet_points = []
+        for position, team in top_teams:
+            points_temp = 0
+            if (position, team) in current_top_teams:
+                points_temp = 6
+            elif team in [tup[1] for tup in current_top_teams]:
+                points_temp = 4
+            bet_points.append(points_temp)
+
+        for position, team in bottom_teams:
+            points_temp = 0
+            if (position, team) in current_bottom_teams:
+                points_temp = 6
+            elif team in [tup[1] for tup in current_bottom_teams]:
+                points_temp = 4
+            bet_points.append(points_temp)
+        table_points = sum(bet_points)
+
+        result_2023.append({
+            'user': user,
+            'total_bets': row['total_bets'],
+            'points': points,
+            'table_points': table_points,
+            'top_scorer': user_top_scorer,
+            'most_assists': user_most_assists,
+            'goal_diff': goal_diff,
+            'goals_scored_diff': goals_scored_diff,
+        })
+
+    max_total = 0
+    for row in result_2023:
+        row['extra_bet'] = 0
+        if row['top_scorer'] in TOP_SCORER_2023:
+            row['extra_bet'] += 6
+        if row['most_assists'] in MOST_ASSISTS_2023:
+            row['extra_bet'] += 6
+        total_points = row['points'] + row['table_points'] + row['extra_bet']
+        row['total_points'] = total_points
+        if total_points > max_total:
+            max_total = total_points
+
+    for row in result_2023:
+        row['order'] = ((max_total - row['total_points']) * 100 + abs(row['goal_diff'])) * 100 + abs(row['goals_scored_diff'])
+
+    result_2023.sort(key=lambda x: x['order'])
+
+    prizes_10 = {
+        '1': 'Årskort',
+        '2': 'Halsduk (eller motsvarande belopp i MFF-shopen)',
+        '3': '',
+        '4-7': 'Betala för ovanstående',
+        '8-10': 'Betala för ovanstående och arrangera fest',
+    }
+
+    count, rank = 0, 0
+    previous = None
+    for row in result_2023:
+        current_value = row['order']
+        count += 1
+        if current_value != previous:
+            rank += count
+            previous = current_value
+            count = 0
+        row['rank'] = rank
+
+    context = {
+        'competition': competition,
+        'standing_predictions': standing_predictions,
+        'teams': current_standings,
+        'top_scorer': top_scorer,
+        'most_assists': most_assists,
+        'result_2023': result_2023,
+        'prizes_10': prizes_10
+    }
     return render(request, 'betting/standing_prediction_suggestion.html', context)
 
 
