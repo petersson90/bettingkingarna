@@ -460,7 +460,9 @@ def standing_predictions_suggestion(request, competition_id):
 
     all_standing_predictions = StandingPrediction.objects.select_related('user').prefetch_related('standingpredictionteam_set__team').filter(competition=competition).order_by('user__first_name')
 
-    TOP_BOTTOM = 3
+    TOP_BOTTOM = 4
+    POINTS_CORRECT = 6
+    POINTS_ALMOST = 2
 
     if competition_id == 3:
         sort_order_list = [int(team_id) for team_id in ALLSVENSKAN_2023.split(',')]
@@ -491,17 +493,17 @@ def standing_predictions_suggestion(request, competition_id):
         for position, team in top_teams:
             points = 0
             if (position, team) in current_top_teams:
-                points = 6
+                points = POINTS_CORRECT
             elif team in [tup[1] for tup in current_top_teams]:
-                points = 4
+                points = POINTS_ALMOST
             bet_points.append(points)
 
         for position, team in bottom_teams:
             points = 0
             if (position, team) in current_bottom_teams:
-                points = 6
+                points = POINTS_CORRECT
             elif team in [tup[1] for tup in current_bottom_teams]:
-                points = 4
+                points = POINTS_ALMOST
             bet_points.append(points)
         points = sum(bet_points)
 
@@ -560,17 +562,17 @@ def standing_predictions_suggestion(request, competition_id):
         for position, team in top_teams:
             points_temp = 0
             if (position, team) in current_top_teams:
-                points_temp = 6
+                points_temp = POINTS_CORRECT
             elif team in [tup[1] for tup in current_top_teams]:
-                points_temp = 4
+                points_temp = POINTS_ALMOST
             bet_points.append(points_temp)
 
         for position, team in bottom_teams:
             points_temp = 0
             if (position, team) in current_bottom_teams:
-                points_temp = 6
+                points_temp = POINTS_CORRECT
             elif team in [tup[1] for tup in current_bottom_teams]:
-                points_temp = 4
+                points_temp = POINTS_ALMOST
             bet_points.append(points_temp)
         table_points = sum(bet_points)
 
@@ -628,7 +630,10 @@ def standing_predictions_suggestion(request, competition_id):
         'top_scorer': top_scorer,
         'most_assists': most_assists,
         'result_2023': result_2023,
-        'prizes_10': prizes_10
+        'prizes_10': prizes_10,
+        'TOP_BOTTOM': TOP_BOTTOM,
+        'POINTS_CORRECT': POINTS_CORRECT,
+        'POINTS_ALMOST': POINTS_ALMOST
     }
     return render(request, 'betting/standing_prediction_suggestion.html', context)
 

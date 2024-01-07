@@ -21,12 +21,12 @@
                         <td class="text-nowrap">
                             <div class="d-flex align-items-start">
                                 {{ team.0.1 }}
-                                {% if not forloop.first %}<span class="ms-auto px-2 {% if not forloop.first %}{% if team.1 == 6 %} text-bg-success {% elif team.1 == 4 %} text-bg-warning {% else %} text-bg-secondary {% endif %}{% endif %}">{{ team.1 }}</span>{% endif %}
+                                {% if not forloop.first %}<span class="ms-auto px-2 {% if not forloop.first %}{% if team.1 == POINTS_CORRECT %} text-bg-success {% elif team.1 == POINTS_ALMOST %} text-bg-warning {% else %} text-bg-secondary {% endif %}{% endif %}">{{ team.1 }}</span>{% endif %}
                             </div>
                         </td>
                     {% endfor %}
                 </tr>
-                {% if team_list.0.0.0 == 3 %} <tr><td>...</td>{% for team in team_list %}<td>...</td>{% endfor %}</tr>{% endif %}
+                {% if team_list.0.0.0 == TOP_BOTTOM %} <tr><td>...</td>{% for team in team_list %}<td>...</td>{% endfor %}</tr>{% endif %}
             {% endfor %}
             <tr class="table-group-divider">
                 <td>Poäng</td>
