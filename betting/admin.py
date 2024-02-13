@@ -45,3 +45,8 @@ class StandingPredictionAdmin(admin.ModelAdmin):
     inlines = [StandingPredictionTeamInline]
 
 admin.site.register(StandingPrediction, StandingPredictionAdmin)
+
+class StandingPredictionTeamAdmin(admin.ModelAdmin):
+    model = StandingPredictionTeam
+
+admin.site.register(StandingPredictionTeam, StandingPredictionTeamAdmin)
