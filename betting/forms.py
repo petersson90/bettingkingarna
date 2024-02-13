@@ -1,11 +1,19 @@
-from django.forms import ModelForm, ChoiceField, Select, ValidationError
-from .models import Team, Competition, Game, Bet, StandingPrediction
+from django.forms import ModelForm, Form, ChoiceField, Select
+from .models import Team, Game, Bet, StandingPrediction
 
 class CustomModelForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control'
+
+class YearSelectionForm(Form):
+    def __init__(self, *args, **kwargs):
+        super(YearSelectionForm, self).__init__(*args, **kwargs)
+        self.fields['year'] = ChoiceField(
+            choices=sorted([(date.year, date.year) for date in Game.objects.dates('start_time', 'year') if Game.objects.exists()], reverse=True),
+            widget=Select(attrs={'class': 'custom-select'})
+        )
 
 
 class GameForm(CustomModelForm):
