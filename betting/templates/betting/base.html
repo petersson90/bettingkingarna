@@ -29,6 +29,12 @@
                         {% if perms.betting.add_game %}<li class="nav-item"><a class="nav-link" href="{% url 'betting:create-game' %}">Skapa match</a></li>{% endif %}
                         {% endif %}
                     </ul>
+                    <form method="post" class="form-inline my-2 my-lg-0">
+                        {% csrf_token %}
+                        {{ year_selection_form.year }}
+                        {% comment %} <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search"> {% endcomment %}
+                        <button class="btn btn-primary mb-1" type="submit">></button>
+                    </form>
                     {% if not request.user.is_authenticated %}
                     <a class="btn btn-light" href="{% url 'betting:login' %}">Logga in</a>
                     {% else %}
