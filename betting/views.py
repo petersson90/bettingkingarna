@@ -60,7 +60,7 @@ def team_list(request):
 
 def game_list(request):
     ''' Listing all past and upcoming games in the current year '''
-    current_datetime = timezone.now() - timezone.timedelta(days=31)
+    current_datetime = timezone.now()
 
     context = {
         'past_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__lt=current_datetime, start_time__year=current_datetime.year).order_by('-start_time'),
@@ -179,7 +179,7 @@ def delete_bet(request, game_id, bet_id):
 
 def standings_list(request):
     ''' Summary of current standings in the bet '''
-    current_datetime = timezone.now() - timezone.timedelta(days=31)
+    current_datetime = timezone.now()
 
     all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1).annotate(total_bets=Count('game'))
 
@@ -454,7 +454,7 @@ def standing_predictions_list(request, competition_id):
 
 def standing_predictions_suggestion(request, competition_id):
     ''' Suggested rules for the 2024 bet '''
-    current_datetime = timezone.now() - timezone.timedelta(days=31)
+    current_datetime = timezone.now()
 
     competition = get_object_or_404(Competition.objects.prefetch_related('teams'), pk=competition_id)
 
@@ -640,7 +640,7 @@ def standing_predictions_suggestion(request, competition_id):
 
 def statistics(request, year):
     ''' Calculates statistics regarding the bet '''
-    current_datetime = timezone.now() - timezone.timedelta(days=31)
+    current_datetime = timezone.now()
 
     def recent_games(number_of_games):
         return Game.objects.filter(start_time__lt=current_datetime, start_time__year=year).order_by('-start_time')[:number_of_games].values('id')
