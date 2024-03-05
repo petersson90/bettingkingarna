@@ -181,7 +181,7 @@ def standings_list(request):
     ''' Summary of current standings in the bet '''
     current_datetime = timezone.now()
 
-    all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year-1).annotate(total_bets=Count('game'))
+    all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=2022).annotate(total_bets=Count('game'))
 
     result_2022 = []
     for row in all_users:
@@ -217,7 +217,7 @@ def standings_list(request):
             'user': user,
             'total_bets': row['total_bets'],
             'points': points,
-            'table_points': table_points[user.id],
+            'table_points': table_points.get(user.id, 0),
             'goal_diff': goal_diff,
             'goals_scored_diff': goals_scored_diff,
         })
