@@ -10,6 +10,9 @@ from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm
 from .models import Team, Competition, Game, Bet, StandingPrediction
 
+ALLSVENSKAN_2024 = '7,23,3,26,29,6,30,18,22,11,5,13,4,1,15,33'
+TOP_SCORER_2024 = ''
+MOST_ASSISTS_2024 = ''
 ALLSVENSKAN_2023 = '1,18,23,3,5,4,6,13,11,15,7,29,22,30,8,24'
 TOP_SCORER_2023 = 'Isaac Kiese Thelin'
 MOST_ASSISTS_2023 = 'Mikkel Rygaard Jensen'
@@ -202,6 +205,10 @@ def standings_list(request):
         competition = Competition.objects.get(pk=3)
         sort_order_list = [int(team_id) for team_id in ALLSVENSKAN_2023.split(',')]
         competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
+    elif selected_year == '2024':
+        competition = Competition.objects.get(pk=8)
+        sort_order_list = [int(team_id) for team_id in ALLSVENSKAN_2024.split(',')]
+        competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
 
 
     result = []
@@ -228,16 +235,22 @@ def standings_list(request):
             user_top_scorer = 'N/A'
             user_most_assists = 'N/A'
         else:
-            user_standing_prediction = StandingPrediction.objects.select_related('user').prefetch_related('standingpredictionteam_set__team').get(user=user.id, competition=competition)
-            teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in user_standing_prediction.standingpredictionteam_set.all()]
-            user_top_scorer = user_standing_prediction.top_scorer
-            user_most_assists = user_standing_prediction.most_assists
+            user_table_points = 0
+            try:
+                user_standing_prediction = StandingPrediction.objects.select_related('user').prefetch_related('standingpredictionteam_set__team').get(user=user.id, competition=competition)
+                teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in user_standing_prediction.standingpredictionteam_set.all()]
+                user_top_scorer = user_standing_prediction.top_scorer
+                user_most_assists = user_standing_prediction.most_assists
+                bet_points = []
+                for position, team in teams:
+                    diff = position - competition_standings.index(team) - 1
+                    bet_points.append(-abs(diff))
+                user_table_points = sum(bet_points)
+            except StandingPrediction.DoesNotExist:
+                user_top_scorer = 'N/A'
+                user_most_assists = 'N/A'
 
-            bet_points = []
-            for position, team in teams:
-                diff = position - competition_standings.index(team) - 1
-                bet_points.append(-abs(diff))
-            user_table_points = sum(bet_points)
+
 
 
         result.append({
@@ -253,12 +266,23 @@ def standings_list(request):
 
 
     max_total = 0
+    top_scorer_list = []
+    most_assists_list = []
+    if selected_year == '2023':
+        top_scorer_list = TOP_SCORER_2023
+        most_assists_list = MOST_ASSISTS_2023
+    elif selected_year == '2024':
+        top_scorer_list = TOP_SCORER_2024
+        most_assists_list = MOST_ASSISTS_2024
+
     for row in result:
         row['extra_bet'] = 0
-        if row['top_scorer'] in TOP_SCORER_2023:
+
+        if row['top_scorer'] in top_scorer_list:
             row['extra_bet'] += 6
-        if row['most_assists'] in MOST_ASSISTS_2023:
+        if row['most_assists'] in most_assists_list:
             row['extra_bet'] += 6
+
         total_points = row['points'] + row['table_points'] + row['extra_bet']
         row['total_points'] = total_points
         if total_points > max_total:
