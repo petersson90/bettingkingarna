@@ -11,8 +11,8 @@ from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm
 from .models import Team, Competition, Game, Bet, StandingPrediction
 
 ALLSVENSKAN_2024 = '1,18,23,3,5,4,6,13,11,15,7,29,22,30,33,26'
-TOP_SCORER_2024 = 'N/A'
-MOST_ASSISTS_2024 = 'N/A'
+TOP_SCORER_2024 = ''
+MOST_ASSISTS_2024 = ''
 ALLSVENSKAN_2023 = '1,18,23,3,5,4,6,13,11,15,7,29,22,30,8,24'
 TOP_SCORER_2023 = 'Isaac Kiese Thelin'
 MOST_ASSISTS_2023 = 'Mikkel Rygaard Jensen'
