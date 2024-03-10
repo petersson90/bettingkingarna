@@ -10,7 +10,7 @@ from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm
 from .models import Team, Competition, Game, Bet, StandingPrediction
 
-ALLSVENSKAN_2024 = '1,18,23,3,5,4,6,13,11,15,7,29,22,30,8,24'
+ALLSVENSKAN_2024 = '1,18,23,3,5,4,6,13,11,15,7,29,22,30,33,26'
 TOP_SCORER_2024 = 'N/A'
 MOST_ASSISTS_2024 = 'N/A'
 ALLSVENSKAN_2023 = '1,18,23,3,5,4,6,13,11,15,7,29,22,30,8,24'
@@ -185,7 +185,7 @@ def standings_list(request):
     # Access the selected_year from the request object
     # selected_year = request.selected_year
     current_datetime = timezone.now()
-    selected_year = current_datetime.year
+    selected_year = str(current_datetime.year)
 
     all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=selected_year).annotate(total_bets=Count('game'))
 
