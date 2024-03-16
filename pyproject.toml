@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.11"
 Django = "^5.0.3"
 python-decouple = "^3.8"
+django-ical = "^1.9.2"
 
 [tool.poetry.group.dev.dependencies]
 django-debug-toolbar = "^4.3.0"
