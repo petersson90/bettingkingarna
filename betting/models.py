@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db.models import Case, When
+from django.urls import reverse
 
 # Create your models here.
 class Team(models.Model):
@@ -45,6 +46,10 @@ class Game(models.Model):
 
     def __str__(self):
         return f'{self.home_team} - {self.away_team}'
+
+    def get_absolute_url(self):
+        ''' Return the url of the game detail page '''
+        return reverse("betting:detail", kwargs={"game_id": self.pk})
 
     def has_started(self):
         ''' True if the start time of the game is in the past '''
