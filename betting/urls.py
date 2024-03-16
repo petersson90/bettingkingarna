@@ -18,5 +18,6 @@ urlpatterns = [
     path('standing-prediction/create/<int:competition_id>/', views.standing_prediction, name='standing-prediction'),
     path('standing-prediction/<int:competition_id>/', views.standing_predictions_list, name='list-standing-prediction'),
     path('standing-prediction/suggestion/<int:competition_id>/', views.standing_predictions_suggestion, name='list-standing-suggestion'),
-    path('statistics/<int:year>/', views.statistics, name='statistics')
+    path('statistics/<int:year>/', views.statistics, name='statistics'),
+    path('game/feed.ics', views.calendar_subscription(), name='calendar')
 ]

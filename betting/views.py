@@ -6,6 +6,7 @@ from django.db.models import Q, Count, Sum, Avg, Window
 from django.db.models.functions import Round
 from django.shortcuts import render, redirect, get_object_or_404
 from django.forms import ValidationError
+from django_ical.views import ICalFeed
 from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm
 from .models import Team, Competition, Game, Bet, StandingPrediction
@@ -661,3 +662,24 @@ def statistics(request, year):
 
     context = {'stats_table': stats_table, 'game_stats': game_stats}
     return render(request, 'betting/statistics.html', context)
+
+
+class calendar_subscription(ICalFeed):
+    ''' A calendar feed with all the games '''
+    product_id = '-//bettingkingarna//Bettingkingarna//EN'
+    timezone = 'UTC'
+    file_name = "feed.ics"
+
+    def items(self):
+        ''' Return all games '''
+        return Game.objects.all()
+
+    def item_title(self, item):
+        return str(item)
+
+    def item_description(self, item):
+        return item.competition
+
+    def item_start_datetime(self, item):
+        ''' Define the start time for each event '''
+        return item.start_time
