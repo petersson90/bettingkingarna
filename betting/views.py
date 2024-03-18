@@ -667,7 +667,7 @@ def statistics(request, year):
 class calendar_subscription(ICalFeed):
     ''' A calendar feed with all the games '''
     product_id = '-//bettingkingarna//Bettingkingarna//EN'
-    timezone = 'UTC'
+    timezone = 'Europe/Stockholm'
     file_name = "feed.ics"
 
     def items(self):
@@ -683,3 +683,7 @@ class calendar_subscription(ICalFeed):
     def item_start_datetime(self, item):
         ''' Define the start time for each event '''
         return item.start_time
+
+    def item_end_datetime(self, item):
+        ''' Define the end time for each event '''
+        return item.start_time + timezone.timedelta(hours=2)
