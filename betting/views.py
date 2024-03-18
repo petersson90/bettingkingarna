@@ -666,7 +666,7 @@ def statistics(request, year):
 
 class calendar_subscription(ICalFeed):
     ''' A calendar feed with all the games '''
-    product_id = '-//bettingkingarna//Bettingkingarna//EN'
+    product_id = '-//Bettingkingarna//All games//SV'
     timezone = 'Europe/Stockholm'
     file_name = "feed.ics"
 
@@ -674,11 +674,15 @@ class calendar_subscription(ICalFeed):
         ''' Return all games '''
         return Game.objects.all()
 
+    def item_guid(self, item):
+        ''' Setting a UID for each item '''
+        return f'Game-{item.id}@Bettingkingarna'
+
     def item_title(self, item):
-        return str(item)
+        return f'{item}'
 
     def item_description(self, item):
-        return item.competition
+        return f'{item.competition}'
 
     def item_start_datetime(self, item):
         ''' Define the start time for each event '''
