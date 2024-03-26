@@ -710,8 +710,8 @@ def table_bet(request, competition_id):
     try:
         user_bet = StandingPrediction.objects.filter(user=request.user, competition=competition).first()
         teams = StandingPredictionTeam.objects.filter(standing_prediction=user_bet).order_by('position')
-        top_scorer = user_bet.top_scorer
-        most_assists = user_bet.most_assists
+        top_scorer = user_bet.top_scorer if user_bet.top_scorer else None
+        most_assists = user_bet.most_assists if user_bet.most_assists else None
 
     except StandingPrediction.DoesNotExist:
         user_bet = StandingPrediction(user=request.user, competition=competition)
