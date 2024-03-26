@@ -392,7 +392,7 @@ def standing_predictions_list(request, competition_id):
     ''' Show all bets regarding the current standings for a specific competition '''
     competition = get_object_or_404(Competition.objects.prefetch_related('teams'), pk=competition_id)
 
-    all_standing_predictions = StandingPrediction.objects.select_related('user').prefetch_related('standingpredictionteam_set__team').filter(competition=competition).order_by('user__first_name')
+    all_standing_predictions = StandingPrediction.objects.select_related('user').prefetch_related('team_positions__team').filter(competition=competition).order_by('user__first_name')
 
     if competition_id == 3:
         sort_order_list = [int(team_id) for team_id in ALLSVENSKAN_2023.split(',')]
@@ -406,7 +406,7 @@ def standing_predictions_list(request, competition_id):
 
     standing_predictions = []
     for standing_prediction in all_standing_predictions:
-        teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in standing_prediction.standingpredictionteam_set.all()]
+        teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in standing_prediction.team_positions.all()]
         user_top_scorer = standing_prediction.top_scorer
         user_most_assists = standing_prediction.most_assists
 
