@@ -19,5 +19,6 @@ urlpatterns = [
     path('standing-prediction/<int:competition_id>/', views.standing_predictions_list, name='list-standing-prediction'),
     path('standing-prediction/suggestion/<int:competition_id>/', views.standing_predictions_suggestion, name='list-standing-suggestion'),
     path('statistics/<int:year>/', views.statistics, name='statistics'),
-    path('game/feed.ics', views.calendar_subscription(), name='calendar')
+    path('game/feed.ics', views.calendar_subscription(), name='calendar'),
+    path('table-bet/<int:competition_id>/', views.table_bet, name='table-bet'),
 ]
