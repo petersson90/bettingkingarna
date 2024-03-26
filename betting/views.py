@@ -708,10 +708,10 @@ def table_bet(request, competition_id):
         bet_positions = [1, 2, 3, 4, 13, 14, 15, 16]
 
     try:
-        user_bet = StandingPrediction.objects.filter(user=request.user, competition=competition).first()
+        user_bet = StandingPrediction.objects.get(user=request.user, competition=competition)
         teams = StandingPredictionTeam.objects.filter(standing_prediction=user_bet).order_by('position')
-        top_scorer = user_bet.top_scorer if user_bet.top_scorer else None
-        most_assists = user_bet.most_assists if user_bet.most_assists else None
+        top_scorer = user_bet.top_scorer
+        most_assists = user_bet.most_assists
 
     except StandingPrediction.DoesNotExist:
         user_bet = StandingPrediction(user=request.user, competition=competition)
