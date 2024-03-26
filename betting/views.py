@@ -2,14 +2,15 @@ from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, permission_required
+from django.db import transaction
 from django.db.models import Q, Count, Sum, Avg, Window
 from django.db.models.functions import Round
 from django.shortcuts import render, redirect, get_object_or_404
 from django.forms import ValidationError
 from django_ical.views import ICalFeed
 from accounts.models import CustomUser
-from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm
-from .models import Team, Competition, Game, Bet, StandingPrediction
+from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm, TableBetForm
+from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPredictionTeam
 
 ALLSVENSKAN_2024 = '1,18,23,3,5,4,6,13,11,15,7,29,22,30,33,26'
 TOP_SCORER_2024 = ''
@@ -691,3 +692,55 @@ class calendar_subscription(ICalFeed):
     def item_end_datetime(self, item):
         ''' Define the end time for each event '''
         return item.start_time + timezone.timedelta(hours=2)
+
+
+@login_required(login_url='betting:login')
+def table_bet(request, competition_id):
+    ''' Show bet for current user for a specific competition standings '''
+    competition = get_object_or_404(Competition, pk=competition_id)
+    teams = []
+    top_scorer = None
+    most_assists = None
+    bet_positions = None
+    if competition_id == 1:
+        bet_positions = [1, 2, 3, 14, 15, 16]
+    if competition_id == 8:
+        bet_positions = [1, 2, 3, 4, 13, 14, 15, 16]
+
+    try:
+        user_bet = StandingPrediction.objects.filter(user=request.user, competition=competition).first()
+        teams = StandingPredictionTeam.objects.filter(standing_prediction=user_bet).order_by('position')
+        top_scorer = user_bet.top_scorer
+        most_assists = user_bet.most_assists
+
+    except StandingPrediction.DoesNotExist:
+        user_bet = StandingPrediction(user=request.user, competition=competition)
+
+    if request.method == 'POST':
+        form = TableBetForm(competition=competition, bet_positions=bet_positions, data=request.POST, instance=user_bet)
+        if form.is_valid():
+            user_bet = form.save(commit=False)
+            user_bet.user = request.user
+            user_bet.competition = competition
+            user_bet.save()
+
+            with transaction.atomic():
+                StandingPredictionTeam.objects.filter(standing_prediction=user_bet).delete()
+
+                for i in bet_positions:
+                    team = form.cleaned_data[f'position_{i}']
+                    StandingPredictionTeam.objects.update_or_create(standing_prediction=user_bet, position=i, defaults={'team': team})
+
+            return redirect('betting:table-bet', competition_id)
+    else:
+        form = TableBetForm(competition=competition, bet_positions=bet_positions, instance=user_bet)
+
+    context = {
+        'form': form,
+        'competition': competition,
+        'teams': teams,
+        'top_scorer': top_scorer,
+        'most_assists': most_assists
+    }
+
+    return render(request, 'betting/table_bet.html', context)

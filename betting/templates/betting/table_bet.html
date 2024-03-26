@@ -1,0 +1,41 @@
+{% extends 'betting/base.html' %} {% block content %} {% if teams %}
+<table class="table table-striped table-hover">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Lag</th>
+    </tr>
+  </thead>
+  <tbody class="table-group-divider">
+    {% for row in teams %}
+    <tr>
+      <td>{{ row.position }}</td>
+      <td class="text-nowrap">
+        {{ row.team }} {% if row.points %}
+        <span
+          class="ms-auto px-2 {% if row.points == POINTS_CORRECT %} text-bg-success {% elif row.points == POINTS_ALMOST %} text-bg-warning {% else %} text-bg-secondary {% endif %}"
+        >
+          {{ row.points }}
+        </span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %} {% if top_scorer %}
+<p>Skytteligavinnare: {{ top_scorer }}</p>
+{% endif %} {% if most_assists %}
+<p>Assistligavinnare: {{ most_assists }}</p>
+{% endif %}
+<h1>Skapa tabellbet</h1>
+<form method="POST" action="">
+  {% csrf_token %} {{ form.as_div }}
+  <button type="submit" class="btn btn-primary mt-2">Spara</button>
+  <a
+    href="{{ request.META.HTTP_REFERER }}"
+    class="btn btn-outline-secondary mt-2"
+    >Gå tillbaka</a
+  >
+</form>
+{% endblock content %}
