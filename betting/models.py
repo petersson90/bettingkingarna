@@ -149,9 +149,9 @@ class StandingPrediction(models.Model):
     ''' A bet for the final standings of a specific competition '''
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     competition = models.ForeignKey(Competition, on_delete=models.PROTECT)
-    standing = models.CharField(max_length=100)
-    top_scorer = models.CharField(max_length=100)
-    most_assists = models.CharField(max_length=100)
+    standing = models.CharField(max_length=100, blank=True)
+    top_scorer = models.CharField(max_length=100, blank=True)
+    most_assists = models.CharField(max_length=100, blank=True)
     # Hidden fields to keep track of creation and update time
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -176,7 +176,7 @@ class StandingPrediction(models.Model):
 
 class StandingPredictionTeam(models.Model):
     ''' Enables a list of teams to be connected to a StandingPrediction '''
-    standing_prediction = models.ForeignKey(StandingPrediction, on_delete=models.PROTECT)
+    standing_prediction = models.ForeignKey(StandingPrediction, on_delete=models.PROTECT, related_name='team_positions')
     team = models.ForeignKey(Team, on_delete=models.PROTECT)
     position = models.PositiveIntegerField()
 
