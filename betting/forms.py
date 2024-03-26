@@ -1,5 +1,5 @@
-from django.forms import ModelForm, ChoiceField, Select, ValidationError
-from .models import Team, Competition, Game, Bet, StandingPrediction
+from django.forms import ModelForm, ChoiceField, Select, ModelChoiceField
+from .models import Team, Game, Bet, StandingPrediction, StandingPredictionTeam
 
 class CustomModelForm(ModelForm):
     def __init__(self, *args, **kwargs):
@@ -44,3 +44,46 @@ class StandingPredictionForm(CustomModelForm):
     class Meta:
         model = StandingPrediction
         fields = ['top_scorer', 'most_assists']
+
+
+class TableBetForm(CustomModelForm):
+    class Meta:
+        model = StandingPrediction
+        fields = ['top_scorer', 'most_assists']
+        labels = {
+            'top_scorer': 'Vilken spelare tror du vinner skytteligan?',
+            'most_assists': 'Vilken spelare tror du vinner assistligan?',
+        }
+
+    def __init__(self, *args, competition, bet_positions=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.competition = competition
+
+        if bet_positions is None:
+            bet_positions = range(1, competition.teams.count() + 1)
+        else:
+            self.bet_positions = bet_positions
+
+        for position in bet_positions:
+            self.fields[f'position_{position}'] = ModelChoiceField(
+                queryset=Team.objects.filter(competitions=competition),
+                label=f'{position}',
+                required=True,
+                initial=StandingPredictionTeam.objects.get(standing_prediction=self.instance, position=position).team if self.instance.id else None,
+                widget=Select(attrs={'class': 'form-control'})
+            )
+
+        if competition in [1]:
+            self.fields['top_scorer'].mandatory = False
+            self.fields['most_assists'].mandatory = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        selected_teams = set()
+
+        # Ensure no duplicate teams are selected
+        for position in self.bet_positions:
+            selected_team = cleaned_data.get(f'position_{position}')
+            if selected_team in selected_teams:
+                self.add_error(f'position_{position}', 'Varje lag får bara väljas en gång')
+            selected_teams.add(selected_team)
