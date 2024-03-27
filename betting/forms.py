@@ -51,8 +51,8 @@ class TableBetForm(CustomModelForm):
         model = StandingPrediction
         fields = ['top_scorer', 'most_assists']
         labels = {
-            'top_scorer': 'Vilken spelare tror du vinner skytteligan?',
-            'most_assists': 'Vilken spelare tror du vinner assistligan?',
+            'top_scorer': 'Vilka två spelare tror du vinner skytteligan?',
+            'most_assists': 'Vilka två spelare tror du vinner assistligan?',
         }
 
     def __init__(self, *args, competition, bet_positions=None, **kwargs):
@@ -72,10 +72,6 @@ class TableBetForm(CustomModelForm):
                 initial=StandingPredictionTeam.objects.get(standing_prediction=self.instance, position=position).team if self.instance.id else None,
                 widget=Select(attrs={'class': 'form-control'})
             )
-
-        if competition in [1]:
-            self.fields['top_scorer'].mandatory = False
-            self.fields['most_assists'].mandatory = False
 
     def clean(self):
         cleaned_data = super().clean()
