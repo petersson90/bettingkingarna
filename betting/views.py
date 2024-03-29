@@ -235,6 +235,10 @@ def standings_list(request):
             user_table_points = table_points.get(user.id, 0)
             user_top_scorer = 'N/A'
             user_most_assists = 'N/A'
+        elif selected_year == '2024':
+            user_table_points = 0
+            user_top_scorer = 'N/A'
+            user_most_assists = 'N/A'
         else:
             user_table_points = 0
             try:
