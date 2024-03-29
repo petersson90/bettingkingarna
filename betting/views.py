@@ -239,7 +239,7 @@ def standings_list(request):
             user_table_points = 0
             try:
                 user_standing_prediction = StandingPrediction.objects.select_related('user').prefetch_related('team_positions__team').get(user=user.id, competition=competition)
-                teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in user_standing_prediction.standingpredictionteam_set.all()]
+                teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in user_standing_prediction.team_positions.all()]
                 user_top_scorer = user_standing_prediction.top_scorer
                 user_most_assists = user_standing_prediction.most_assists
                 bet_points = []
