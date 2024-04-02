@@ -15,6 +15,7 @@ from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPr
 ALLSVENSKAN_2024 = '1,30,3,13,6,7,15,5,18,23,33,4,22,29,11,26'
 TOP_SCORER_2024 = 'Ludvig Fritzson, Marcus Danielson, Stefano Vecchia, Søren Rieks, Ajdin Zeljkovic, Viktor Gustafson, Sebastian Nanasi, Noel Milleskog, Isaac Kiese Thelin, Wenderson Oliveira, Lucas Bergvall, Wilmer Odefalk, Michael Baidoo, Rui Modesto, Isak Andri Sigurgeirsson, Simon Hedlund, Miro Tenho, Erik Botheim, Tobias Gulliksen, Yousef Salech, Nahir Besara, Melker Hallberg & Jusef Erabi'
 MOST_ASSISTS_2024 = 'Isaac Kiese Thelin'
+DEADLINE_2024 = timezone.make_aware(timezone.datetime(2024, 4, 7, 11))
 ALLSVENSKAN_2023 = '1,18,23,3,5,4,6,13,11,15,7,29,22,30,8,24'
 TOP_SCORER_2023 = 'Isaac Kiese Thelin'
 MOST_ASSISTS_2023 = 'Mikkel Rygaard Jensen'
@@ -721,6 +722,10 @@ def table_bet(request, competition_id):
         user_bet = StandingPrediction(user=request.user, competition=competition)
 
     if request.method == 'POST':
+        if competition_id == 8 and timezone.now() >= DEADLINE_2024:
+            messages.error(request, 'Deadline har passerat och inga nya eller ändrade bet kan läggas.')
+            return redirect('betting:table-bet', competition_id)
+
         form = TableBetForm(competition=competition, bet_positions=bet_positions, data=request.POST, instance=user_bet)
         if form.is_valid():
             user_bet = form.save(commit=False)
@@ -738,6 +743,10 @@ def table_bet(request, competition_id):
             return redirect('betting:table-bet', competition_id)
     else:
         form = TableBetForm(competition=competition, bet_positions=bet_positions, instance=user_bet)
+
+
+    if competition_id == 8 and timezone.now() >= DEADLINE_2024:
+        form = None
 
     context = {
         'form': form,
@@ -822,7 +831,7 @@ def table_bet_summary(request, competition_id):
             })
 
         # Hide all standing predictions if the competition has not started yet
-        if competition_id == 8 and timezone.now() < timezone.make_aware(timezone.datetime(2024, 4, 7, 11, 0, 0, 0)):
+        if competition_id == 8 and timezone.now() < DEADLINE_2024:
             standing_predictions = []
 
         teams = []
