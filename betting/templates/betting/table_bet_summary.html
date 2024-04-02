@@ -1,0 +1,66 @@
+{% extends "betting/base.html" %} {% block content %}
+<h2>Tabellbet för {{ competition }}</h2>
+<div class="table-responsive">
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        <th scope="col">Plac.</th>
+        <th scope="col" class="border-end">Lag</th>
+        {% for row in standing_predictions %}
+        <th scope="col" class="border-end">{{ row.user }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody class="table-group-divider">
+      {% for team_list in teams %}
+      <tr>
+        <td>{{ team_list.0.0.0 }}</td>
+        {% for team in team_list %}
+        <td class="text-nowrap border-end">
+          <div class="d-flex align-items-start">
+            <span class="me-2">{{ team.0.1 }}</span>
+            {% if not forloop.first %}<span
+              class="ms-auto px-2 {% if not forloop.first %} {% if competition.season == '2023' %} {% if team.1 == 0 %} text-bg-success {% elif team.1 < -5 %} text-bg-danger {% elif team.1 < -2 %} text-bg-warning {% else %} text-bg-secondary {% endif %} {% else %} {% if team.1 == POINTS_CORRECT %} text-bg-success {% elif team.1 == POINTS_ALMOST %} text-bg-warning {% else %} text-bg-secondary {% endif %} {% endif %} {% endif %}"
+              >{{ team.1 }}</span
+            >{% endif %}
+          </div>
+        </td>
+        {% endfor %}
+      </tr>
+      {% if team_list.0.0.0 == TOP_BOTTOM %}
+      <tr>
+        <td>...</td>
+        {% for team in team_list %}
+        <td class="border-end">...</td>
+        {% endfor %}
+      </tr>
+      {% endif %} {% endfor %}
+      <tr class="table-group-divider">
+        <td>Poäng</td>
+        <td class="border-end"></td>
+        {% for row in standing_predictions %}
+        <td class="text-end border-end">{{ row.points }}</td>
+        {% endfor %}
+      </tr>
+      {% if top_scorer %}
+      <tr class="table-group-divider">
+        <td>Skyttekung</td>
+        <td class="border-end">{{ top_scorer }}</td>
+        {% for row in standing_predictions %}
+        <td class="border-end">{{ row.top_scorer }}</td>
+        {% endfor %}
+      </tr>
+      {% endif %} {% if most_assists %}
+      <tr>
+        <td>Assistkung</td>
+        <td class="border-end">{{ most_assists }}</td>
+        {% for row in standing_predictions %}
+        <td class="border-end">{{ row.most_assists }}</td>
+        {% endfor %}
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

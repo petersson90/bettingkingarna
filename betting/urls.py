@@ -21,4 +21,5 @@ urlpatterns = [
     path('statistics/<int:year>/', views.statistics, name='statistics'),
     path('game/feed.ics', views.calendar_subscription(), name='calendar'),
     path('table-bet/<int:competition_id>/', views.table_bet, name='table-bet'),
+    path('table-bet/<int:competition_id>/summary/', views.table_bet_summary, name='table-bet-summary'),
 ]
