@@ -12,9 +12,9 @@ from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm, TableBetForm
 from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPredictionTeam
 
-ALLSVENSKAN_2024 = '1,7,3,23,26,29,15,18,11,30,6,22,13,5,4,33'
+ALLSVENSKAN_2024 = '1,3,23,26,15,7,6,29,30,13,18,11,5,22,4,33'
 TOP_SCORER_2024 = 'Isaac Kiese Thelin'
-MOST_ASSISTS_2024 = 'Vinícius Nogueira & Jacob Trenskow'
+MOST_ASSISTS_2024 = 'Sebastian Nanasi'
 DEADLINE_2024 = timezone.make_aware(timezone.datetime(2024, 4, 7, 11))
 ALLSVENSKAN_2023 = '1,18,23,3,5,4,6,13,11,15,7,29,22,30,8,24'
 TOP_SCORER_2023 = 'Isaac Kiese Thelin'
