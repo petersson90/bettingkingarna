@@ -206,3 +206,55 @@ class StandingPredictionTeam(models.Model):
     def save(self, *args, **kwargs):
         self.clean()  # Validate the team and position before saving
         super(StandingPredictionTeam, self).save(*args, **kwargs)
+
+class Standing(models.Model):
+    ''' A record of the standings of a specific competition at a point in time '''
+    competition = models.ForeignKey(Competition, on_delete=models.PROTECT)
+    round = models.PositiveSmallIntegerField()
+    top_scorer = models.CharField(max_length=100, blank=True)
+    most_assists = models.CharField(max_length=100, blank=True)
+    # Hidden fields to keep track of creation and update time
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['competition', 'round'],
+                name='one_standing_per_round_per_competition'
+            )
+        ]
+
+
+class TeamPosition(models.Model):
+    ''' Enables a position/team relationship to be connected to a specific Standing record '''
+    standing = models.ForeignKey(Standing, on_delete=models.PROTECT, related_name='team_positions')
+    team = models.ForeignKey(Team, on_delete=models.PROTECT)
+    position = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['standing', 'position'],
+                name='unique_position_per_standing'
+            ),
+            models.UniqueConstraint(
+                fields=['standing', 'team'],
+                name='unique_team_per_standing'
+            )
+        ]
+
+    def clean(self):
+        super().clean()
+
+        # Check if the selected team belongs to any of the related competitions of the prediction
+        if not self.team.competitions.filter(id=self.standing.competition.id).exists():
+            raise ValidationError(f'Selected team does not belong to this competition')
+
+        max_position = self.standing.competition.teams.count()
+        if self.position < 1 or self.position > max_position:
+            raise ValidationError(f'Position must be between 1 and {max_position}')
+
+    def save(self, *args, **kwargs):
+        self.clean()  # Validate the team and position before saving
+        super(TeamPosition, self).save(*args, **kwargs)
