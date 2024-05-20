@@ -5,16 +5,13 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.db import transaction
 from django.db.models import Q, Count, Sum, Avg, Window
 from django.db.models.functions import Round
-from django.shortcuts import render, redirect, get_object_or_404
 from django.forms import ValidationError
+from django.shortcuts import render, redirect, get_object_or_404
 from django_ical.views import ICalFeed
 from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm, TableBetForm
-from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPredictionTeam
+from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPredictionTeam, Standing, TeamPosition
 
-ALLSVENSKAN_2024 = '1,3,15,23,26,29,7,18,6,13,5,11,30,22,4,33'
-TOP_SCORER_2024 = 'Isaac Kiese Thelin & Yousef Salech'
-MOST_ASSISTS_2024 = 'Sebastian Nanasi'
 DEADLINE_2024 = timezone.make_aware(timezone.datetime(2024, 4, 7, 11))
 ALLSVENSKAN_2023 = '1,18,23,3,5,4,6,13,11,15,7,29,22,30,8,24'
 TOP_SCORER_2023 = 'Isaac Kiese Thelin'
@@ -778,9 +775,10 @@ def table_bet_summary(request, competition_id):
             POINTS_CORRECT = 6
             POINTS_ALMOST = 4
         elif competition_id == 8: # Allsvenskan 2024
-            sort_order_list = [int(team_id) for team_id in ALLSVENSKAN_2024.split(',')]
-            top_scorer = TOP_SCORER_2024
-            most_assists = MOST_ASSISTS_2024
+            standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
+            sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
+            top_scorer = standings.top_scorer
+            most_assists = standings.most_assists
             TOP_BOTTOM = 4
             POINTS_CORRECT = 6
             POINTS_ALMOST = 2
@@ -884,6 +882,18 @@ def table_bet_summary(request, competition_id):
         most_assists = ''
         standing_predictions = []
 
+    team_positions = TeamPosition.objects.filter(standing__competition=competition).values(
+            'team__name',
+            'position',
+            'standing__round',
+        ).order_by('team__name', 'standing__round')
+
+    chart_data = {}
+    for item in team_positions:
+        team = item['team__name']
+        chart_data[team] = chart_data.get(team, {})
+        standing_round = item['standing__round']
+        chart_data[team][standing_round] = item['position']
 
     context = {
         'competition': competition,
@@ -894,6 +904,7 @@ def table_bet_summary(request, competition_id):
         'TOP_BOTTOM': TOP_BOTTOM,
         'POINTS_CORRECT': POINTS_CORRECT,
         'POINTS_ALMOST': POINTS_ALMOST,
+        'chart_data': chart_data,
     }
 
     return render(request, 'betting/table_bet_summary.html', context)
