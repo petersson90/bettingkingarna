@@ -206,7 +206,8 @@ def standings_list(request):
         competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
     elif selected_year == '2024':
         competition = Competition.objects.get(pk=8)
-        sort_order_list = [int(team_id) for team_id in ALLSVENSKAN_2024.split(',')]
+        standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
+        sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
         competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
 
 
@@ -271,8 +272,8 @@ def standings_list(request):
         top_scorer_list = TOP_SCORER_2023
         most_assists_list = MOST_ASSISTS_2023
     elif selected_year == '2024':
-        top_scorer_list = TOP_SCORER_2024
-        most_assists_list = MOST_ASSISTS_2024
+        top_scorer_list = standings.top_scorer
+        most_assists_list = standings.most_assists
 
     for row in result:
         row['extra_bet'] = 0
