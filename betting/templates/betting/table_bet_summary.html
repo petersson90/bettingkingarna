@@ -63,4 +63,56 @@
   </table>
 </div>
 
+{% if chart_data %}
+<figure>
+  <canvas id="tableChart" class="figure-img img-fluid"></canvas>
+</figure>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  const ctx = document.getElementById('tableChart');
+
+  const labels = [{% for team, value in chart_data.items %}{% if forloop.first %}{% for round, position in value.items %}{{ round }}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}{% endfor %}];
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {% for team, value in chart_data.items %}
+          {
+            label: '{{ team }}',
+            data: [{% for round, position in value.items %}{{ position }}{% if not forloop.last %},{% endif %}{% endfor %}],
+          },
+        {% endfor %}
+      ]
+    },
+    options: {
+      datasets: {
+        line: {
+          cubicInterpolationMode: 'monotone',
+          borderWidth: 1,
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: false,
+          reverse: true,
+          ticks: {
+            stepSize: 1,
+          },
+        },
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'right'
+        }
+      }
+    }
+  });
+</script>
+{% endif %}
+
 {% endblock %}
