@@ -48,7 +48,7 @@ admin.site.register(StandingPrediction, StandingPredictionAdmin)
 
 class TeamPositionInline(admin.TabularInline):
     model = TeamPosition
-    readonly_fields = ['position', 'team']
+    fields = ['position', 'team']
     extra = 0
 
 class StandingAdmin(admin.ModelAdmin):
