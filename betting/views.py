@@ -120,7 +120,7 @@ def update_game(request, game_id):
         form = GameForm(request.POST, instance=game)
         if form.is_valid():
             form.save()
-            return redirect('betting:index')
+            return redirect('betting:detail', game_id=game_id)
 
     context = {'form': form}
     return render(request, 'betting/base_form.html', context)
