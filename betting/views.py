@@ -909,3 +909,68 @@ def table_bet_summary(request, competition_id):
     }
 
     return render(request, 'betting/table_bet_summary.html', context)
+
+
+def competition_overview(request, competition_id):
+    ''' Show the games and bet results for a specific competition '''
+    current_datetime = timezone.now()
+    competition = get_object_or_404(Competition, pk=competition_id)
+
+    all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__competition=competition).annotate(total_bets=Count('user'))
+    
+    result = []
+    for row in all_users:
+        # print(bet.user, bet.game, bet.points)
+        user = CustomUser.objects.get(pk=row['user'])
+
+        user_bets = Bet.objects.select_related('game', 'game__home_team', 'game__away_team').exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__competition=competition)
+        # print(user_bets)
+        points = 0
+        goal_diff = 0
+        goals_scored_diff = 0
+        for bet in user_bets:
+            points += bet.points
+            if bet.game.home_team.id == 1:
+                goal_diff += (bet.home_goals - bet.away_goals) - (bet.game.home_goals - bet.game.away_goals)
+                goals_scored_diff += bet.home_goals - bet.game.home_goals
+            else:
+                goal_diff += (bet.away_goals - bet.home_goals) - (bet.game.away_goals - bet.game.home_goals)
+                goals_scored_diff += bet.away_goals - bet.game.away_goals
+
+        result.append({
+            'user': user,
+            'total_bets': row['total_bets'],
+            'points': points,
+            'goal_diff': goal_diff,
+            'goals_scored_diff': goals_scored_diff,
+        })
+    
+    max_total = 0
+    for row in result:
+        total_points = row['points']
+        if total_points > max_total:
+            max_total = total_points
+    
+    for row in result:
+        row['order'] = ((max_total - row['points']) * 100 + abs(row['goal_diff'])) * 100 + abs(row['goals_scored_diff'])
+
+    result.sort(key=lambda x: x['order'])
+
+    count, rank = 0, 0
+    previous = None
+    for row in result:
+        current_value = row['order']
+        count += 1
+        if current_value != previous:
+            rank += count
+            previous = current_value
+            count = 0
+        row['rank'] = rank
+
+    context = {
+        'competition': competition,
+        'result': result,
+        'past_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__lt=current_datetime, competition=competition).order_by('-start_time'),
+        'upcoming_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__gte=current_datetime, competition=competition).order_by('start_time'),
+    }
+    return render(request, 'betting/competition_overview.html', context)

@@ -1,0 +1,79 @@
+{% extends "betting/base.html" %}
+
+{% block content %}
+<section class="game-list">
+    <h2>Kommande matcher</h2>
+    {% if upcoming_games %}
+    <div class="list-group list-group-flush">
+        {% for game in upcoming_games %}
+        <a href="{% url 'betting:detail' game.id %}" class="list-group-item list-group-item-action">
+            <small class="mb-1">{{ game.start_time }}</small>
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">{{ game }}</h5>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+        <p>Inga matcher inlagda.</p>
+    {% endif %}
+</section>
+
+<section class="standings-table">
+    <h2 class="border-top border-5 border-dark mt-3 pt-3">Matchbet {{ competition.name }} {{ competition.season }}</h2>
+    {% if result %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Namn</th>
+                <th scope="col" class="text-end">
+                <abbr class="d-block d-sm-none" title="Poäng">P</abbr
+                ><span class="d-none d-sm-block">Poäng</span>
+                </th>
+                <th scope="col" class="text-end">+/-</th>
+                <th scope="col" class="text-end"><abbr title="Gjorda mål">GM</abbr></th>
+            </tr>
+            </thead>
+            <tbody class="table-group-divider">
+            {% for row in result %}
+            <tr>
+                <td>{{ row.rank }}</td>
+                <td class="text-nowrap">{{ row.user }}</td>
+                <td class="text-end"><strong>{{ row.points }}</strong></td>
+                <td class="text-end">{{ row.goal_diff }}</td>
+                <td class="text-end">{{ row.goals_scored_diff }}</td>
+            </tr>
+
+            <tr>
+                {% endfor %}
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>Inga matcher har spelats.</p>
+    {% endif %}
+</section>
+
+<section class="game-list">
+    <h2 class="border-top border-5 border-dark mt-3 pt-3">Spelade matcher</h2>
+    {% if past_games %}
+    <div class="list-group list-group-flush">
+        {% for game in past_games %}
+        <a href="{% url 'betting:detail' game.id %}" class="list-group-item list-group-item-action">
+            <small class="mb-1">{{ game.start_time }}</small>
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">{{ game }}</h5>
+                <p class="badge bg-primary rounded-pill">{{ game.result|default_if_none:"-" }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+        <p>Inga matcher inlagda.</p>
+    {% endif %}
+</section>
+
+{% endblock %}
