@@ -26,6 +26,7 @@ class Competition(models.Model):
     # end_date = models.DateField()
     season = models.CharField(max_length=5)
     teams = models.ManyToManyField(Team, related_name='competitions')
+    excluded = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.name} {self.season}'
