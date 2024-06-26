@@ -66,8 +66,8 @@ def game_list(request):
     current_datetime = timezone.now()
 
     context = {
-        'past_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__lt=current_datetime, start_time__year=current_datetime.year).order_by('-start_time'),
-        'upcoming_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__gte=current_datetime, start_time__year=current_datetime.year).order_by('start_time')
+        'past_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__lt=current_datetime, start_time__year=current_datetime.year, competition__excluded=False).order_by('-start_time'),
+        'upcoming_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__gte=current_datetime, start_time__year=current_datetime.year, competition__excluded=False).order_by('start_time')
     }
 
     return render(request, 'betting/game_list.html', context)
@@ -187,7 +187,7 @@ def standings_list(request):
     current_datetime = timezone.now()
     selected_year = str(current_datetime.year)
 
-    all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=selected_year).annotate(total_bets=Count('game'))
+    all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=selected_year, game__competition__excluded=False).annotate(total_bets=Count('game'))
 
     if selected_year == '2022':
         table_points = {
@@ -216,7 +216,7 @@ def standings_list(request):
         # print(bet.user, bet.game, bet.points)
         user = CustomUser.objects.get(pk=row['user'])
 
-        user_bets = Bet.objects.select_related('game', 'game__home_team', 'game__away_team').exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=selected_year)
+        user_bets = Bet.objects.select_related('game', 'game__home_team', 'game__away_team').exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=selected_year, game__competition__excluded=False)
         # print(user_bets)
         points = 0
         goal_diff = 0
@@ -514,7 +514,7 @@ def standing_predictions_suggestion(request, competition_id):
         for row in standing_predictions:
             current_standings[i].append((row['teams'][i], row['bet_points'][i]))
 
-    all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year).annotate(total_bets=Count('game'))
+    all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year, game__competition__excluded=False).annotate(total_bets=Count('game'))
 
     competition = Competition.objects.get(pk=3)
     sort_order_list = [int(team_id) for team_id in ALLSVENSKAN_2023.split(',')]
@@ -523,7 +523,7 @@ def standing_predictions_suggestion(request, competition_id):
     for row in all_users:
         user = CustomUser.objects.get(pk=row['user'])
 
-        user_bets = Bet.objects.select_related('game', 'game__home_team', 'game__away_team').exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year)
+        user_bets = Bet.objects.select_related('game', 'game__home_team', 'game__away_team').exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=current_datetime.year, game__competition_exclude=False)
 
         points = 0
         goal_diff = 0
@@ -630,9 +630,9 @@ def statistics(request, year):
     current_datetime = timezone.now()
 
     def recent_games(number_of_games):
-        return Game.objects.filter(start_time__lt=current_datetime, start_time__year=year).order_by('-start_time')[:number_of_games].values('id')
+        return Game.objects.filter(start_time__lt=current_datetime, start_time__year=year, competition__excluded=False).order_by('-start_time')[:number_of_games].values('id')
 
-    stats_table = Bet.objects.values('user__first_name').filter(game__start_time__lt=current_datetime, game__start_time__year=year).annotate(
+    stats_table = Bet.objects.values('user__first_name').filter(game__start_time__lt=current_datetime, game__start_time__year=year, game__competition__excluded=False).annotate(
         total_bets=Count('user'),
         total_points=Sum('points'),
         average_points=Round(Avg('points'), 2),
@@ -645,7 +645,7 @@ def statistics(request, year):
     ).order_by('-total_points')
 
     # Assuming you have a predefined list of user names or IDs
-    user_list = Bet.objects.values('user__id').filter(game__start_time__lt=current_datetime, game__start_time__year=year).annotate().distinct()
+    user_list = Bet.objects.values('user__id').filter(game__start_time__lt=current_datetime, game__start_time__year=year, game__competition__excluded=False).annotate().distinct()
 
     # Dynamically generate the fields for each user's cumulative points
     user_cumulative_points = {f'user_{user["user__id"]}_cumulative_points': Window(Sum('bets__points', filter=Q(bets__user__id=user['user__id'])), order_by='start_time') for user in user_list}
@@ -653,7 +653,7 @@ def statistics(request, year):
     # Create the queryset
     game_stats = (
         Game.objects
-        .filter(start_time__lt=current_datetime, start_time__year=year)
+        .filter(start_time__lt=current_datetime, start_time__year=year, competition__excluded=False)
         .prefetch_related('bets', 'bets__user')
         .select_related('home_team', 'away_team')
         .annotate(
@@ -676,7 +676,7 @@ class calendar_subscription(ICalFeed):
 
     def items(self):
         ''' Return all games '''
-        return Game.objects.all()
+        return Game.objects.filter(competition__excluded=False)
 
     def item_guid(self, item):
         ''' Setting a UID for each item '''
