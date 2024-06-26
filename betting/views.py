@@ -136,7 +136,7 @@ def create_team(request):
         form = TeamForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('betting:index')
+            return redirect('betting:list-team')
 
     context = {'form': form}
     return render(request, 'betting/base_form.html', context)
@@ -153,7 +153,7 @@ def update_team(request, team_id):
         form = TeamForm(request.POST, instance=team)
         if form.is_valid():
             form.save()
-            return redirect('betting:index')
+            return redirect('betting:list-team')
 
     context = {'form': form}
     return render(request, 'betting/base_form.html', context)
