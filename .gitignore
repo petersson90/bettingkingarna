@@ -127,6 +127,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# App specific
 fivethirtyeight.py
 fivethirtyeight/20230330.html
 fivethirtyeight/20230403.html
@@ -140,3 +142,4 @@ fivethirtyeight/20230524.html
 fivethirtyeight/20230529.html
 fivethirtyeight/20230605.html
 local_db.sqlite3
+media/
