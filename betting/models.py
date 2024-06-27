@@ -11,6 +11,7 @@ from django.urls import reverse
 class Team(models.Model):
     ''' A team with related details '''
     name = models.CharField(max_length=100)
+    logo = models.FileField(null=True, blank=True, upload_to='team_logos/')
 
     class Meta:
         ordering = [Case(When(id=1, then=0), default=1), 'name']

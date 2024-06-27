@@ -133,7 +133,7 @@ def create_team(request):
     form = TeamForm()
 
     if request.method == 'POST':
-        form = TeamForm(request.POST)
+        form = TeamForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             return redirect('betting:list-team')
@@ -150,7 +150,7 @@ def update_team(request, team_id):
     form = TeamForm(instance=team)
 
     if request.method == 'POST':
-        form = TeamForm(request.POST, instance=team)
+        form = TeamForm(request.POST, request.FILES, instance=team)
         if form.is_valid():
             form.save()
             return redirect('betting:list-team')
