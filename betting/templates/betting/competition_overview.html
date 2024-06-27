@@ -7,9 +7,13 @@
     <div class="list-group list-group-flush">
         {% for game in upcoming_games %}
         <a href="{% url 'betting:detail' game.id %}" class="list-group-item list-group-item-action">
-            <small class="mb-1">{{ game.start_time }}</small>
+            <small>{{ game.start_time }}</small>
             <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">{{ game }}</h5>
+                <div class="d-flex justify-content-start">
+                    <img src="{% if game.home_team.logo %}{{ game.home_team.logo.url }}{% endif %}" class="img-fluid me-3 rounded-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                    <h5>{{ game }}</h5>
+                    <img src="{% if game.away_team.logo %}{{ game.away_team.logo.url }}{% endif %}" class="img-fluid ms-3 rounded-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                </div>
             </div>
         </a>
         {% endfor %}
@@ -63,10 +67,14 @@
     <div class="list-group list-group-flush">
         {% for game in past_games %}
         <a href="{% url 'betting:detail' game.id %}" class="list-group-item list-group-item-action">
-            <small class="mb-1">{{ game.start_time }}</small>
+            <small>{{ game.start_time }}</small>
             <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">{{ game }}</h5>
-                <p class="badge bg-primary rounded-pill">{{ game.result|default_if_none:"-" }}</p>
+                <div class="d-flex justify-content-start">
+                    <img src="{% if game.home_team.logo %}{{ game.home_team.logo.url }}{% endif %}" class="img-fluid me-3 rounded-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                    <h5>{{ game }}</h5>
+                    <img src="{% if game.away_team.logo %}{{ game.away_team.logo.url }}{% endif %}" class="img-fluid ms-3 rounded-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                </div>
+                <div class="ml-auto"><p class="badge bg-primary rounded-pill">{{ game.result|default_if_none:"-" }}</p></div>
             </div>
         </a>
         {% endfor %}
