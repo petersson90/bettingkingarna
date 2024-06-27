@@ -10,7 +10,10 @@
     <div class="list-group list-group-flush">
         {% for team in team_list %}
         <a href="{% if perms.betting.change_team %}{% url 'betting:update-team' team.id %}{% else %}#{% endif %}" class="list-group-item list-group-item-action">
-            <h5 class="mb-1">{% if team.logo %}<img src="{{ team.logo.url }}" class="img-fluid me-3" style="height: 2rem;"> {% endif %}{{ team }}</h5>
+            <div class="d-flex justify-content-start">
+                <img src="{% if team.logo %}{{ team.logo.url }}{% endif %}" class="img-fluid me-3 rounded-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                <h5>{{ team }}</h5>
+            </div>
         </a>
         {% endfor %}
     </div>
