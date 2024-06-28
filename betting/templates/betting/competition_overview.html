@@ -87,8 +87,8 @@
                         <p class="h5 ms-auto me-2">{{ game.away_goals }}</p>
                     </div>
                 </div>
+                <a href="{% url 'betting:detail' game.id %}" class="stretched-link"></a>
             </div>
-            <a href="{% url 'betting:detail' game.id %}" class="stretched-link"></a>
         </div>
         {% endfor %}
     </div>
