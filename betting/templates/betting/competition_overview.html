@@ -10,9 +10,9 @@
             <small>{{ game.start_time }}</small>
             <div class="d-flex w-100 justify-content-between">
                 <div class="d-flex justify-content-start">
-                    <img src="{% if game.home_team.logo %}{{ game.home_team.logo.url }}{% endif %}" class="img-fluid me-3 rounded-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                    <img src="{% if game.home_team.logo %}{{ game.home_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
                     <h5>{{ game }}</h5>
-                    <img src="{% if game.away_team.logo %}{{ game.away_team.logo.url }}{% endif %}" class="img-fluid ms-3 rounded-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                    <img src="{% if game.away_team.logo %}{{ game.away_team.logo.url }}{% endif %}" class="img-fluid ms-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
                 </div>
             </div>
         </a>

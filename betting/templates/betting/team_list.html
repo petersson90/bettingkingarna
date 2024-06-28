@@ -11,7 +11,7 @@
         {% for team in team_list %}
         <a href="{% if perms.betting.change_team %}{% url 'betting:update-team' team.id %}{% else %}#{% endif %}" class="list-group-item list-group-item-action">
             <div class="d-flex justify-content-start">
-                <img src="{% if team.logo %}{{ team.logo.url }}{% endif %}" class="img-fluid me-3 rounded-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                <img src="{% if team.logo %}{{ team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
                 <h5>{{ team }}</h5>
             </div>
         </a>
