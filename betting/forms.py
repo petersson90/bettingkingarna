@@ -1,4 +1,4 @@
-from django.forms import ModelForm, ChoiceField, Select, ModelChoiceField
+from django.forms import ModelForm, ChoiceField, Select, ModelChoiceField, DateTimeInput
 from .models import Team, Game, Bet, StandingPrediction, StandingPredictionTeam
 
 class CustomModelForm(ModelForm):
@@ -12,6 +12,9 @@ class GameForm(CustomModelForm):
     class Meta:
         model = Game
         fields = '__all__'
+        widgets = {
+            'start_time': DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
 
 
 class TeamForm(CustomModelForm):
