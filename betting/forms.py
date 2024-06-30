@@ -13,7 +13,7 @@ class GameForm(CustomModelForm):
         model = Game
         fields = '__all__'
         widgets = {
-            'start_time': DateTimeInput(attrs={'type': 'datetime-local'}),
+            'start_time': DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
         }
 
 
