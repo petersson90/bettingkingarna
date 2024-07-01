@@ -3,9 +3,10 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db import transaction
-from django.db.models import Q, Count, Sum, Avg, Window
+from django.db.models import Q, Count, Sum, Avg, Window, F
 from django.db.models.functions import Round
 from django.forms import ValidationError
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django_ical.views import ICalFeed
 from accounts.models import CustomUser
@@ -974,3 +975,47 @@ def competition_overview(request, competition_id):
         'upcoming_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__gte=current_datetime, competition=competition).order_by('start_time'),
     }
     return render(request, 'betting/competition_overview.html', context)
+
+def chart_data_view(request, competition_id):
+    ''' Returns a json object with the data for a specific competition '''    
+    current_datetime = timezone.now()
+    data = Bet.objects.filter(game__competition=competition_id, game__start_time__lt=current_datetime).annotate(
+        game_start_time=F('game__start_time')
+    ).annotate(
+        cumulative_points=Window(
+            expression=Sum('points'),
+            partition_by=F('user'),
+            order_by=F('game__start_time').asc()
+        )
+    ).values('user__first_name', 'game_start_time', 'cumulative_points').order_by('user', 'game_start_time')
+
+    for item in data:
+        item['game_start_time'] = item['game_start_time'].strftime('%Y-%m-%d %H:%M')
+    
+    # Structure data for Chart.js
+    chart_data = {
+        'labels': [],
+        'datasets': []
+    }
+
+    # Get unique start times for the labels
+    unique_start_times = sorted(set(item['game_start_time'] for item in data))
+    chart_data['labels'] = unique_start_times
+
+    # Prepare datasets for each user
+    user_points = {}
+    for item in data:
+        user = item['user__first_name']
+        if user not in user_points:
+            user_points[user] = {
+                'label': user,
+                'data': [None] * len(unique_start_times),
+                # 'borderColor': f'rgba({hash(user) % 255}, {(hash(user) // 2) % 255}, {(hash(user) // 3) % 255}, 1)',
+                'fill': False,
+            }
+        index = unique_start_times.index(item['game_start_time'])
+        user_points[user]['data'][index] = item['cumulative_points']
+
+    chart_data['datasets'] = list(user_points.values())
+
+    return JsonResponse(chart_data)

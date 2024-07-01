@@ -67,6 +67,43 @@
     {% endif %}
 </section>
 
+<figure>
+    <canvas id="tableChart" class="figure-img img-fluid"></canvas>
+</figure>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    fetch("{% url 'betting:chart-data-view' competition.id %}")
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('tableChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: {
+                    datasets: {
+                        line: {
+                            cubicInterpolationMode: 'monotone',
+                            borderWidth: 1,
+                        },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                    },    
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'right'
+                        },
+                    },
+                },
+            });
+        });
+</script>
+
 <section class="game-list">
     <h2 class="border-top border-5 border-dark mt-3 pt-3">Spelade matcher</h2>
     {% if past_games %}

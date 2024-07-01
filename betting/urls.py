@@ -23,4 +23,5 @@ urlpatterns = [
     path('table-bet/<int:competition_id>/', views.table_bet, name='table-bet'),
     path('table-bet/<int:competition_id>/summary/', views.table_bet_summary, name='table-bet-summary'),
     path('competition-overview/<int:competition_id>/', views.competition_overview, name='competition-overview'),
+    path('chart-data-view/<int:competition_id>/', views.chart_data_view, name='chart-data-view'),
 ]
