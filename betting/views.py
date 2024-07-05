@@ -3,8 +3,8 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db import transaction
-from django.db.models import Q, Count, Sum, Avg, Window, F
-from django.db.models.functions import Round
+from django.db.models import Q, Count, Sum, Avg, Window, F, Case, When, IntegerField
+from django.db.models.functions import Round, Rank, Abs
 from django.forms import ValidationError
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -917,62 +917,65 @@ def competition_overview(request, competition_id):
     current_datetime = timezone.now()
     competition = get_object_or_404(Competition, pk=competition_id)
 
-    all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__competition=competition).annotate(total_bets=Count('user'))
-    
+    users_with_bets = CustomUser.objects.filter(
+        bet__game__start_time__lt=current_datetime,
+        bet__game__competition=competition
+    ).distinct()
+
+    user_bets_data = Bet.objects.filter(
+        user__in=users_with_bets,
+        game__start_time__lt=current_datetime,
+        game__competition=competition,
+        game__home_goals__isnull=False
+    ).select_related('user', 'game', 'game__home_team', 'game__away_team').values(
+        'user__id',
+    ).annotate(
+        points=Sum('points'),
+        goal_diff=Sum(
+            Case(
+                When(game__home_team__id=1,
+                     then=F('home_goals') - F('away_goals') - (F('game__home_goals') - F('game__away_goals'))),
+                default=F('away_goals') - F('home_goals') - (F('game__away_goals') - F('game__home_goals')),
+                output_field=IntegerField(),
+            )
+        ),
+        goals_scored_diff=Sum(
+            Case(
+                When(game__home_team__id=1,
+                     then=F('home_goals') - F('game__home_goals')),
+                default=F('away_goals') - F('game__away_goals'),
+                output_field=IntegerField(),
+            )
+        )        
+    ).annotate(
+        rank=Window(
+            expression=Rank(),
+            order_by=[
+                F('points').desc(),
+                Abs(F('goal_diff')).asc(),
+                Abs(F('goals_scored_diff')).asc(),
+            ]
+        )
+    )
+
+    user_data_dict = {}
+    for data in user_bets_data:
+        user_id = data['user__id']
+        user_data_dict[user_id] = {k: v for k, v in data.items() if k not in {'user__id'}}
+
     result = []
-    for row in all_users:
-        # print(bet.user, bet.game, bet.points)
-        user = CustomUser.objects.get(pk=row['user'])
-
-        user_bets = Bet.objects.select_related('game', 'game__home_team', 'game__away_team').exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__competition=competition)
-        # print(user_bets)
-        points = 0
-        goal_diff = 0
-        goals_scored_diff = 0
-        for bet in user_bets:
-            points += bet.points
-            if bet.game.home_team.id == 1:
-                goal_diff += (bet.home_goals - bet.away_goals) - (bet.game.home_goals - bet.game.away_goals)
-                goals_scored_diff += bet.home_goals - bet.game.home_goals
-            else:
-                goal_diff += (bet.away_goals - bet.home_goals) - (bet.game.away_goals - bet.game.home_goals)
-                goals_scored_diff += bet.away_goals - bet.game.away_goals
-
-        result.append({
-            'user': user,
-            'total_bets': row['total_bets'],
-            'points': points,
-            'goal_diff': goal_diff,
-            'goals_scored_diff': goals_scored_diff,
-        })
+    for user in users_with_bets:
+        user_data = user_data_dict.get(user.id, {})
+        user_data['user'] = user
+        result.append(user_data)
     
-    max_total = 0
-    for row in result:
-        total_points = row['points']
-        if total_points > max_total:
-            max_total = total_points
-    
-    for row in result:
-        row['order'] = ((max_total - row['points']) * 100 + abs(row['goal_diff'])) * 100 + abs(row['goals_scored_diff'])
-
-    result.sort(key=lambda x: x['order'])
-
-    count, rank = 0, 0
-    previous = None
-    for row in result:
-        current_value = row['order']
-        count += 1
-        if current_value != previous:
-            rank += count
-            previous = current_value
-            count = 0
-        row['rank'] = rank
+    result.sort(key=lambda x: x['rank'])
 
     context = {
         'competition': competition,
         'result': result,
-        'past_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__lt=current_datetime, competition=competition).order_by('-start_time'),
-        'upcoming_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__gte=current_datetime, competition=competition).order_by('start_time'),
+        'past_games': Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__lt=current_datetime, competition=competition).order_by('-start_time'),
+        'upcoming_games': Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__gte=current_datetime, competition=competition).order_by('start_time')
     }
     return render(request, 'betting/competition_overview.html', context)
 
