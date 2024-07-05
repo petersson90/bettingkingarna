@@ -6,10 +6,14 @@
     {% if upcoming_games %}
     <div class="row mb-2">
         {% for game in upcoming_games %}
-        <div class="col-md-6 col-lg-4">
+        <div class="col-md-6 col-xl-4">
             <div class="row g-0 border rounded overflow-hidden flex-md-row mb-2 shadow-sm h-md-250 position-relative">
                 <div class="col p-4 d-flex flex-column position-static">
-                    <div class="mb-2 text-body-secondary"><strong class="text-primary-emphasis">{{ game.start_time }}</strong> | {{ game.competition}}</div>
+                    <div class="d-flex flex-row mb-2 text-body-secondary">
+                        <strong class="text-primary-emphasis">{{ game.start_time }}</strong>
+                        <span class="mx-1">|</span>
+                        {{ game.competition}}
+                    </div>
                     <div class="d-flex flex-row">
                         <img src="{% if game.home_team.logo %}{{ game.home_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
                         <p class="h5 text-nowrap">{{ game.home_team }}</p>
@@ -49,16 +53,13 @@
             <tbody class="table-group-divider">
             {% for row in result %}
             <tr>
-                <td>{{ row.rank }}</td>
+                <td><i class="bi me-1 {% if row.rank < row.prev_rank %}bi-caret-up text-success{% elif row.rank > row.prev_rank %}bi-caret-down text-danger{% else %}bi-dash{% endif %}"></i>{{ row.rank }}</td>
                 <td class="text-nowrap">{{ row.user }}</td>
                 <td class="text-end"><strong>{{ row.points }}</strong></td>
                 <td class="text-end">{{ row.goal_diff }}</td>
                 <td class="text-end">{{ row.goals_scored_diff }}</td>
             </tr>
-
-            <tr>
-                {% endfor %}
-            </tr>
+            {% endfor %}
             </tbody>
         </table>
     </div>
