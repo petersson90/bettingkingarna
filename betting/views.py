@@ -1016,11 +1016,18 @@ def competition_overview(request, competition_id):
     
     result.sort(key=lambda x: x['rank'])
 
+    upcoming_games = Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__gte=current_datetime, competition=competition).prefetch_related('bets').order_by('start_time')
+
+    upcoming_games_with_bets = {}
+    for game in upcoming_games:
+        user_has_bet = Bet.objects.filter(user=request.user, game=game).exists()
+        upcoming_games_with_bets[game] = {'user_has_bet': user_has_bet}
+
     context = {
         'competition': competition,
         'result': result,
         'past_games': Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__lt=current_datetime, competition=competition).order_by('-start_time'),
-        'upcoming_games': Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__gte=current_datetime, competition=competition).order_by('start_time')
+        'upcoming_games': upcoming_games_with_bets
     }
     return render(request, 'betting/competition_overview.html', context)
 
