@@ -958,10 +958,55 @@ def competition_overview(request, competition_id):
         )
     )
 
+    latest_game = Game.objects.filter(
+        start_time__lt=current_datetime,
+        competition=competition
+    ).latest('start_time')
+
+    user_prev_rank = Bet.objects.filter(
+        user__in=users_with_bets,
+        game__start_time__lt=current_datetime,
+        game__competition=competition,
+        game__home_goals__isnull=False
+    ).exclude(game=latest_game).select_related('user', 'game', 'game__home_team', 'game__away_team').values(
+        'user__id',
+    ).annotate(
+        points=Sum('points'),
+        goal_diff=Sum(
+            Case(
+                When(game__home_team__id=1,
+                     then=F('home_goals') - F('away_goals') - (F('game__home_goals') - F('game__away_goals'))),
+                default=F('away_goals') - F('home_goals') - (F('game__away_goals') - F('game__home_goals')),
+                output_field=IntegerField(),
+            )
+        ),
+        goals_scored_diff=Sum(
+            Case(
+                When(game__home_team__id=1,
+                     then=F('home_goals') - F('game__home_goals')),
+                default=F('away_goals') - F('game__away_goals'),
+                output_field=IntegerField(),
+            )
+        )        
+    ).annotate(
+        rank=Window(
+            expression=Rank(),
+            order_by=[
+                F('points').desc(),
+                Abs(F('goal_diff')).asc(),
+                Abs(F('goals_scored_diff')).asc(),
+            ]
+        )
+    )
+
     user_data_dict = {}
     for data in user_bets_data:
         user_id = data['user__id']
         user_data_dict[user_id] = {k: v for k, v in data.items() if k not in {'user__id'}}
+
+    for data in user_prev_rank:
+        user_id = data['user__id']
+        user_data_dict[user_id]['prev_rank'] = data['rank']
 
     result = []
     for user in users_with_bets:
