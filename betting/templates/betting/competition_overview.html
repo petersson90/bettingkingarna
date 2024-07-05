@@ -53,7 +53,7 @@
             <tbody class="table-group-divider">
             {% for row in result %}
             <tr>
-                <td><i class="bi me-1 {% if row.rank < row.prev_rank %}bi-caret-up text-success{% elif row.rank > row.prev_rank %}bi-caret-down text-danger{% else %}bi-dash{% endif %}"></i>{{ row.rank }}</td>
+                <td>{{ row.rank }}</td>
                 <td class="text-nowrap">{{ row.user }}</td>
                 <td class="text-end"><strong>{{ row.points }}</strong></td>
                 <td class="text-end">{{ row.goal_diff }}</td>
