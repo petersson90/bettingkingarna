@@ -45,7 +45,7 @@
             <td>{% if game.has_started %}{{ bet.points|default_if_none:"-" }}{% endif %}</td>
             <td>{{ bet.created }}</td>
             <td>{% if bet.is_updated %}{{ bet.updated }}{% endif %}</td>
-            <td>{% if not game.has_started and request.user == bet.user %}<a href="{% url 'betting:delete-bet' game.id bet.id %}">Ta bort</a>{% endif %}</td>
+            <td>{% if not game.has_started and request.user == bet.user %}<a href="{% url 'betting:delete-bet' game.id bet.id %}" class="link-danger"><i class="bi bi-trash3-fill"></i></a>{% endif %}</td>
         </tr>
         {% endfor %}
     </tbody>
