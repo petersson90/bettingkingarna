@@ -911,7 +911,7 @@ def table_bet_summary(request, competition_id):
 
     return render(request, 'betting/table_bet_summary.html', context)
 
-
+@login_required(login_url='betting:login')
 def competition_overview(request, competition_id):
     ''' Show the games and bet results for a specific competition '''
     current_datetime = timezone.now()
@@ -961,7 +961,7 @@ def competition_overview(request, competition_id):
     latest_game = Game.objects.filter(
         start_time__lt=current_datetime,
         competition=competition
-    ).latest('start_time')
+    ).order_by('start_time').last()
 
     user_prev_rank = Bet.objects.filter(
         user__in=users_with_bets,
