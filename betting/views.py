@@ -67,8 +67,8 @@ def game_list(request):
     current_datetime = timezone.now()
 
     context = {
-        'past_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__lt=current_datetime, start_time__year=current_datetime.year, competition__excluded=False).order_by('-start_time'),
-        'upcoming_games': Game.objects.select_related('home_team', 'away_team').filter(start_time__gte=current_datetime, start_time__year=current_datetime.year, competition__excluded=False).order_by('start_time')
+        'past_games': Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__lt=current_datetime, start_time__year=current_datetime.year, competition__excluded=False).order_by('-start_time'),
+        'upcoming_games': Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__gte=current_datetime, start_time__year=current_datetime.year, competition__excluded=False).order_by('start_time')
     }
 
     return render(request, 'betting/game_list.html', context)
@@ -188,7 +188,11 @@ def standings_list(request):
     current_datetime = timezone.now()
     selected_year = str(current_datetime.year)
 
-    all_users = Bet.objects.values('user').filter(game__start_time__lt=current_datetime, game__start_time__year=selected_year, game__competition__excluded=False).annotate(total_bets=Count('game'))
+    users_with_bets = CustomUser.objects.filter(
+        bet__game__start_time__lt=current_datetime,
+        bet__game__start_time__year=selected_year,
+        bet__game__competition__excluded=False
+    ).distinct()
 
     if selected_year == '2022':
         table_points = {
@@ -213,10 +217,7 @@ def standings_list(request):
 
 
     result = []
-    for row in all_users:
-        # print(bet.user, bet.game, bet.points)
-        user = CustomUser.objects.get(pk=row['user'])
-
+    for user in users_with_bets:
         user_bets = Bet.objects.select_related('game', 'game__home_team', 'game__away_team').exclude(game__home_goals__isnull=True).filter(user=user.id, game__start_time__lt=current_datetime, game__start_time__year=selected_year, game__competition__excluded=False)
         # print(user_bets)
         points = 0
@@ -257,7 +258,6 @@ def standings_list(request):
 
         result.append({
             'user': user,
-            'total_bets': row['total_bets'],
             'points': points,
             'table_points': user_table_points,
             'top_scorer': user_top_scorer,
