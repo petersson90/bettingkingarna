@@ -14,6 +14,7 @@
                 <div class="col px-4 py-3 d-flex flex-row position-static">
                     <img src="{% if team.logo %}{{ team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
                     <p class="h5 text-nowrap">{{ team }}</p>
+                    <a href="{% url 'betting:update-team' team.id %}" class="stretched-link"></a>
                 </div>
             </div>
         </div>
