@@ -90,7 +90,13 @@ def game_details(request, game_id):
             form.save()
             return redirect('betting:detail', game_id=game_id)
 
-    context = {'game': game, 'form': form}
+    bet_summary = {}
+    for bet in game.bets.all().order_by('user__first_name').prefetch_related('user'):
+        bet_summary[bet.result()] = bet_summary.get(bet.result(), []) + [bet.user.first_name]
+
+    sorted_bet_summary = sorted(bet_summary.items(), key=lambda x: (int(x[0].split('-')[0]) - int(x[0].split('-')[1]), -int(x[0].split('-')[1])))
+
+    context = {'game': game, 'form': form, 'bet_summary': sorted_bet_summary}
     return render(request, 'betting/game_detail.html', context)
 
 

@@ -1,26 +1,24 @@
 {% extends "betting/base.html" %}
 
 {% block content %}
-<div class="col">
-    <div class="row g-0 border rounded overflow-hidden flex-md-row mb-2 shadow-sm h-md-250 position-relative">
-        <div class="col p-4 d-flex flex-column position-static">
-            <div class="d-flex flex-column flex-sm-row flex-column-reverse mb-1">
-                <div class="text-primary-emphasis"><strong>{{ game.start_time }}</strong></div>
-                <div class="mb-2 text-body-secondary d-none d-sm-block mx-1">|</div>
-                <div class="mb-sm-2 text-body-secondary">{{ game.competition}}</div>
-                {% if perms.betting.change_game %}<div class="position-absolute top-0 end-0 pt-4 pe-4"><a class="btn btn-outline-primary" href="{% url 'betting:update-game' game.id %}">Uppdatera match</a></div>{% endif %}
-            </div>
-            <div class="d-flex flex-row">
-                <img src="{% if game.home_team.logo %}{{ game.home_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 2.25rem; width: 2.25rem;">
-                <p class="h2 text-nowrap">{{ game.home_team }}</p>
-                {% if game.has_started %}<p class="h2 ms-auto me-2">{{ game.home_goals }}</p>{% endif %}
-            </div>
-            <div class="d-flex flex-row">
-                <img src="{% if game.away_team.logo %}{{ game.away_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 2.25rem; width: 2.25rem;">
-                <p class="h2 text-nowrap flex-grow-1">{{ game.away_team }}</p>
-                {% if game.has_started %}<p class="h2 ms-auto me-2">{{ game.away_goals }}</p>{% endif %}
-                
-            </div>
+<div class="row g-0 border rounded overflow-hidden flex-md-row mb-2 shadow-sm h-md-250 position-relative">
+    <div class="col p-4 d-flex flex-column position-static">
+        <div class="d-flex flex-column flex-sm-row flex-column-reverse mb-1">
+            <div class="text-primary-emphasis"><strong>{{ game.start_time }}</strong></div>
+            <div class="mb-2 text-body-secondary d-none d-sm-block mx-1">|</div>
+            <div class="mb-sm-2 text-body-secondary">{{ game.competition}}</div>
+            {% if perms.betting.change_game %}<div class="position-absolute top-0 end-0 pt-4 pe-4"><a class="btn btn-outline-primary" href="{% url 'betting:update-game' game.id %}">Uppdatera match</a></div>{% endif %}
+        </div>
+        <div class="d-flex flex-row">
+            <img src="{% if game.home_team.logo %}{{ game.home_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 2.25rem; width: 2.25rem;">
+            <p class="h2 text-nowrap">{{ game.home_team }}</p>
+            {% if game.has_started %}<p class="h2 ms-auto me-2">{{ game.home_goals }}</p>{% endif %}
+        </div>
+        <div class="d-flex flex-row">
+            <img src="{% if game.away_team.logo %}{{ game.away_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 2.25rem; width: 2.25rem;">
+            <p class="h2 text-nowrap flex-grow-1">{{ game.away_team }}</p>
+            {% if game.has_started %}<p class="h2 ms-auto me-2">{{ game.away_goals }}</p>{% endif %}
+            
         </div>
     </div>
 </div>
@@ -55,22 +53,35 @@
 {% endif %}
 
 {% if not game.has_started %}
-<h3>Lägg till/ändra bet</h3>
-<div class="col-md-6">
-    <form method="POST" action="">
-        {% csrf_token %}
-        {% comment %} {{ form.as_div }} {% endcomment %}
-        <div class="input-group">
-            <span class="input-group-text">Resultat:</span>
-            {{ form.home_goals.errors }}
-            {{ form.home_goals }}
-            <span class="input-group-text">-</span>
-            {{ form.away_goals.errors }}
-            {{ form.away_goals }}
-            <button type="submit" class="btn btn-primary">Skicka</button>
-        </div>
-    </form>
+<div class="row">
+    <h3>Lägg till/ändra bet</h3>
+    <div class="col col-md-6">
+        <form method="POST" action="">
+            {% csrf_token %}
+            {% comment %} {{ form.as_div }} {% endcomment %}
+            <div class="input-group">
+                <span class="input-group-text">Resultat:</span>
+                {{ form.home_goals.errors }}
+                {{ form.home_goals }}
+                <span class="input-group-text">-</span>
+                {{ form.away_goals.errors }}
+                {{ form.away_goals }}
+                <button type="submit" class="btn btn-primary">Skicka</button>
+            </div>
+        </form>
+    </div>
 </div>
+{% else %}
+    {% if perms.betting.add_game %}
+    <div class="row g-0">
+        <h4>Messenger-boten</h4>
+        <div class="col border rounded py-2">
+            {% for bet, users in bet_summary %}
+                <div class="ps-4">{{ bet }}: {% for user in users %}{{ user }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 {% endif %}
 
 {% endblock %}
