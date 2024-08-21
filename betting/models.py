@@ -199,7 +199,7 @@ class StandingPredictionTeam(models.Model):
 
         # Check if the selected team belongs to any of the related competitions of the prediction
         if not self.team.competitions.filter(id=self.standing_prediction.competition.id).exists():
-            raise ValidationError(f'Selected team does not belong to this competition')
+            raise ValidationError(f'{self.team} does not belong to this competition')
 
         max_position = self.standing_prediction.competition.teams.count()
         if self.position < 1 or self.position > max_position:
@@ -251,7 +251,7 @@ class TeamPosition(models.Model):
 
         # Check if the selected team belongs to any of the related competitions of the prediction
         if not self.team.competitions.filter(id=self.standing.competition.id).exists():
-            raise ValidationError(f'Selected team does not belong to this competition')
+            raise ValidationError(f'{self.team} does not belong to this competition')
 
         max_position = self.standing.competition.teams.count()
         if self.position < 1 or self.position > max_position:
