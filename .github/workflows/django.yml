@@ -40,4 +40,5 @@ jobs:
         poetry install --no-root
     - name: Run Tests
       run: |
+        echo "SECRET_KEY='w&aiu#tvn#ms4s7-+_j6r%5^t)(2k$#=h-$8x^*6uip0pxqb@9'" >> $GITHUB_ENV
         poetry run python3 manage.py test
