@@ -243,9 +243,10 @@ def standings_list(request):
             user_top_scorer = 'N/A'
             user_most_assists = 'N/A'
         elif selected_year == '2024':
-            user_table_points = 0
-            user_top_scorer = 'N/A'
-            user_most_assists = 'N/A'
+            user_standing_prediction = StandingPrediction.objects.get(user=user.id, competition=competition)
+            user_table_points = user_standing_prediction.calculate_points(standings, 4, 6, 2)
+            user_top_scorer = user_standing_prediction.top_scorer
+            user_most_assists = user_standing_prediction.most_assists
         else:
             user_table_points = 0
             try:
@@ -773,6 +774,7 @@ def table_bet_summary(request, competition_id):
     TOP_BOTTOM = 0
     POINTS_CORRECT = 0
     POINTS_ALMOST = 0
+    standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
 
     if competition_id == 1 or competition_id == 8:
         if competition_id == 1: # Allsvenskan 2022
@@ -783,7 +785,6 @@ def table_bet_summary(request, competition_id):
             POINTS_CORRECT = 6
             POINTS_ALMOST = 4
         elif competition_id == 8: # Allsvenskan 2024
-            standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
             sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
             top_scorer = standings.top_scorer
             most_assists = standings.most_assists
@@ -823,7 +824,8 @@ def table_bet_summary(request, competition_id):
                 elif team in [tup[1] for tup in current_bottom_teams]:
                     points = POINTS_ALMOST
                 bet_points.append(points)
-            points = sum(bet_points)
+
+            points = standing_prediction.calculate_points(standings, TOP_BOTTOM, POINTS_CORRECT, POINTS_ALMOST)
 
             standing_predictions.append({
                 'user': standing_prediction.user,

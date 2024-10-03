@@ -166,13 +166,37 @@ class StandingPrediction(models.Model):
             )
         ]
 
-    def calculate_points(self, actual_standing: list[Team]):
+    def calculate_points(self, standing, TOP_BOTTOM=4, POINTS_CORRECT=6, POINTS_ALMOST=2):
         ''' Returns the points for the standings bet '''
         points = 0
-        predicted_standing = [Team.objects.get(team_id) for team_id in self.standing.split(',')]
-        for position, team in enumerate(predicted_standing):
-            diff = position - actual_standing.index(team)
-            points -= abs(diff)
+        standing = [(team_position.position, team_position.team) for team_position in standing.team_positions.all().prefetch_related("team").order_by('position')]
+        
+        if self.competition == 3:
+            predicted_standing = [Team.objects.get(team_id) for team_id in self.standing.split(',')]
+            for position, team in enumerate(predicted_standing):
+                diff = position - standing.index(team)
+                points -= abs(diff)
+            return points
+        
+        top_teams = standing[:TOP_BOTTOM]
+        bottom_teams = standing[-TOP_BOTTOM:]
+
+        predicted_standing = [(prediction.position, prediction.team) for prediction in self.team_positions.all().prefetch_related("team").order_by('position')]
+        predicted_top_teams = predicted_standing[:TOP_BOTTOM]
+        predicted_bottom_teams = predicted_standing[-TOP_BOTTOM:]
+
+        for position, team in predicted_top_teams:
+            if (position, team) in top_teams:
+                points += POINTS_CORRECT
+            elif team in [tup[1] for tup in top_teams]:
+                points += POINTS_ALMOST
+
+        for position, team in predicted_bottom_teams:
+            if (position, team) in bottom_teams:
+                points += POINTS_CORRECT
+            elif team in [tup[1] for tup in bottom_teams]:
+                points += POINTS_ALMOST
+
         return points
 
 
