@@ -644,6 +644,11 @@ def statistics(request, year):
         total_bets=Count('user'),
         total_points=Sum('points'),
         average_points=Round(Avg('points'), 2),
+        zero_points=Count(Case(When(points=0, then=1), output_field=IntegerField())),
+        one_point=Count(Case(When(points=1, then=1), output_field=IntegerField())),
+        three_points=Count(Case(When(points=3, then=1), output_field=IntegerField())),
+        four_points=Count(Case(When(points=4, then=1), output_field=IntegerField())),
+        six_points=Count(Case(When(points=6, then=1), output_field=IntegerField())),
         total_points_last_5=Sum('points', filter=Q(game__in=recent_games(5))),
         average_points_last_5=Round(Avg('points', filter=Q(game__in=recent_games(5))), 2),
         total_points_last_10=Sum('points', filter=Q(game__in=recent_games(10))),
@@ -653,7 +658,16 @@ def statistics(request, year):
     ).order_by('-total_points')
 
     # Assuming you have a predefined list of user names or IDs
-    user_list = Bet.objects.values('user__id').filter(game__start_time__lt=current_datetime, game__start_time__year=year, game__competition__excluded=False).annotate().distinct()
+    user_list = (Bet.objects
+        .values('user__id', 'user__first_name')
+        .filter(
+            game__start_time__lt=current_datetime,
+            game__start_time__year=year,
+            game__competition__excluded=False
+        )
+        .distinct()
+        .order_by('user__first_name')
+    )
 
     # Dynamically generate the fields for each user's cumulative points
     user_cumulative_points = {f'user_{user["user__id"]}_cumulative_points': Window(Sum('bets__points', filter=Q(bets__user__id=user['user__id'])), order_by='start_time') for user in user_list}
@@ -672,7 +686,7 @@ def statistics(request, year):
         .order_by('start_time')
     )
 
-    context = {'stats_table': stats_table, 'game_stats': game_stats}
+    context = {'stats_table': stats_table, 'user_list': user_list, 'game_stats': game_stats}
     return render(request, 'betting/statistics.html', context)
 
 
