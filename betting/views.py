@@ -220,6 +220,11 @@ def standings_list(request):
         standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
         sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
         competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
+    elif selected_year == '2025':
+        competition = Competition.objects.get(pk=13)
+        # standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
+        # sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
+        # competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
 
 
     result = []
@@ -247,6 +252,11 @@ def standings_list(request):
             user_table_points = user_standing_prediction.calculate_points(standings, 4, 6, 2)
             user_top_scorer = user_standing_prediction.top_scorer
             user_most_assists = user_standing_prediction.most_assists
+        elif selected_year == '2025':
+            # user_standing_prediction = StandingPrediction.objects.get(user=user.id, competition=competition)
+            user_table_points = 0 # user_standing_prediction.calculate_points(standings, 4, 6, 2)
+            user_top_scorer = '' # user_standing_prediction.top_score
+            user_most_assists = '' # user_standing_prediction.most_assists
         else:
             user_table_points = 0
             try:
@@ -968,7 +978,7 @@ def competition_overview(request, competition_id):
                 default=F('away_goals') - F('game__away_goals'),
                 output_field=IntegerField(),
             )
-        )        
+        )
     ).annotate(
         rank=Window(
             expression=Rank(),
@@ -1009,7 +1019,7 @@ def competition_overview(request, competition_id):
                 default=F('away_goals') - F('game__away_goals'),
                 output_field=IntegerField(),
             )
-        )        
+        )
     ).annotate(
         rank=Window(
             expression=Rank(),
@@ -1035,7 +1045,7 @@ def competition_overview(request, competition_id):
         user_data = user_data_dict.get(user.id, {})
         user_data['user'] = user
         result.append(user_data)
-    
+
     result.sort(key=lambda x: x['rank'])
 
     upcoming_games = Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__gte=current_datetime, competition=competition).prefetch_related('bets').order_by('start_time')
@@ -1054,7 +1064,7 @@ def competition_overview(request, competition_id):
     return render(request, 'betting/competition_overview.html', context)
 
 def chart_data_view(request, competition_id):
-    ''' Returns a json object with the data for a specific competition '''    
+    ''' Returns a json object with the data for a specific competition '''
     current_datetime = timezone.now()
     data = Bet.objects.filter(game__competition=competition_id, game__start_time__lt=current_datetime).annotate(
         game_start_time=F('game__start_time')
@@ -1068,7 +1078,7 @@ def chart_data_view(request, competition_id):
 
     for item in data:
         item['game_start_time'] = item['game_start_time'].strftime('%Y-%m-%d %H:%M')
-    
+
     # Structure data for Chart.js
     chart_data = {
         'labels': [],
