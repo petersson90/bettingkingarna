@@ -1,4 +1,5 @@
 {% extends "betting/base.html" %}
+{% load betting_extras %}
 
 {% block content %}
 <div class="row g-0 border rounded overflow-hidden flex-md-row mb-2 shadow-sm h-md-250 position-relative">
@@ -30,19 +31,21 @@
             <th scope="col">Namn</th>
             <th scope="col">Resultat</th>
             <th scope="col">Poäng</th>
-            <th scope="col">Skapat</th>
-            <th scope="col">Uppdaterat</th>
+            <!-- <th scope="col">Skapat</th>
+            <th scope="col">Uppdaterat</th> -->
+            <th scope="col">Deadline</th>
             <th scope="col"></th>
         </tr>
     </thead>
     <tbody class="table-group-divider">
-        {% for bet in game.bets.all %}
+        {% for bet in sorted_bets %}
         <tr class="{% if request.user == bet.user %}table-active{% endif %}">
             <td>{{ bet.user }}</td>
-            <td>{% if game.has_started or request.user == bet.user %}{{ bet.result }}{% endif %}</td>
+            <td>{% if game.has_started or request.user == bet.user or bet_visibility|get_item:bet.user.id %}{{ bet.result }}{% endif %}</td>
             <td>{% if game.has_started %}{{ bet.points|default_if_none:"-" }}{% endif %}</td>
-            <td>{{ bet.created }}</td>
-            <td>{% if bet.is_updated %}{{ bet.updated }}{% endif %}</td>
+            <!-- <td>{{ bet.created }}</td>
+            <td>{% if bet.is_updated %}{{ bet.updated }}{% endif %}</td> -->
+            <td>{{ user_deadlines|get_item:bet.user.id|date:"H:i" }}</td>
             <td>{% if not game.has_started and request.user == bet.user %}<a href="{% url 'betting:delete-bet' game.id bet.id %}" class="link-danger"><i class="bi bi-trash3-fill"></i></a>{% endif %}</td>
         </tr>
         {% endfor %}
@@ -52,9 +55,10 @@
 <p>Ingen har tippat på matchen än.</p>
 {% endif %}
 
-{% if not game.has_started %}
+{% if user_can_submit %}
 <div class="row">
     <h3>Lägg till/ändra bet</h3>
+    <p>Deadline för ditt bet: {{ user_deadline }}</p>
     <div class="col col-md-6">
         <form method="POST" action="">
             {% csrf_token %}
@@ -71,7 +75,8 @@
         </form>
     </div>
 </div>
-{% else %}
+{% endif %}
+{% if game.has_started %}
     {% if perms.betting.add_game %}
     <div class="row g-0">
         <h4>Messenger-boten</h4>

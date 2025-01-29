@@ -4,8 +4,10 @@ from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.db.models import Case, When
+from django.db.models import Case, When, Sum
 from django.urls import reverse
+
+import math
 
 # Create your models here.
 class Team(models.Model):
@@ -73,6 +75,35 @@ class Game(models.Model):
             return 'X'
         else:
             return '2'
+        
+    def get_deadline(self, user):
+        """Dynamically calculates the submission deadline for this user in this game."""
+        if not user.is_authenticated:
+            return None  # No deadline for anonymous users
+        
+        leaderboard = (
+            Bet.objects.filter(
+                game__start_time__year=self.start_time.year,
+                game__start_time__lt=timezone.now()
+            )
+            .values('user')
+            .annotate(total_score=Sum('points'))
+            .order_by('-total_score')
+        )
+
+        # Determine user's position in the leaderboard
+        user_position = 0
+        for index, entry in enumerate(leaderboard, start=1):
+            if entry['user'] == user.id:
+                user_position = index
+                break
+
+        if user_position == 0:
+            time_before_game = timezone.timedelta(minutes=0)
+        else:
+            # Calculate deadline (Starting 60 minutes before start, each pair get 10 minutes to submit)
+            time_before_game = timezone.timedelta(minutes=60 - math.ceil(user_position / 2) * 10)
+        return self.start_time - time_before_game
 
 
 class Bet(models.Model):
@@ -130,11 +161,18 @@ class Bet(models.Model):
         if self.result() == self.game.result():
             points += 1
         return points
+    
+    def can_submit(self):
+        """Check if the user can still submit or modify this bet."""
+        deadline = self.game.get_deadline(self.user)
+        return timezone.now() <= deadline if deadline else False
 
     def save(self, *args, game_updated=False, **kwargs):
         ''' Update of the save method to restrict saving after the game has started '''
         if self.game.start_time <= timezone.now() and not game_updated:
             raise ValidationError('Cannot save bet for a game that has already started.')
+        if not self.can_submit() and not game_updated:
+            raise ValidationError('Cannot save bet after your deadline.')
         if not game_updated:
             self.updated = timezone.now()
         self.points = self.calculate_points()

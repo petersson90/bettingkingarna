@@ -82,6 +82,7 @@ def game_details(request, game_id):
         bet = Bet.objects.get(user=request.user, game_id=game_id)
     except Bet.DoesNotExist:
         bet = Bet(user=request.user, game_id=game_id)
+
     form = BetForm(instance=bet)
 
     if request.method == 'POST':
@@ -89,6 +90,25 @@ def game_details(request, game_id):
         if form.is_valid():
             form.save()
             return redirect('betting:detail', game_id=game_id)
+        
+    # Get the current user's bet deadline
+    user_deadline = game.get_deadline(request.user)
+
+    # Determine if the user can submit a bet
+    user_can_submit = timezone.now() < user_deadline
+
+    # Create a mapping of users to their respective deadlines
+    user_deadlines = {
+        bet.user.id: game.get_deadline(bet.user) for bet in game.bets.all()
+    }
+
+    # Sort bets by user deadline (earliest first)
+    sorted_bets = sorted(game.bets.all(), key=lambda bet: user_deadlines.get(bet.user.id))
+
+    # Determine visibility for each bet
+    bet_visibility = {
+        bet.user.id: timezone.now() > user_deadlines.get(bet.user.id) for bet in game.bets.all()
+    }
 
     bet_summary = {}
     for bet in game.bets.all().order_by('user__first_name').prefetch_related('user'):
@@ -96,7 +116,16 @@ def game_details(request, game_id):
 
     sorted_bet_summary = sorted(bet_summary.items(), key=lambda x: (int(x[0].split('-')[0]) - int(x[0].split('-')[1]), -int(x[0].split('-')[1])))
 
-    context = {'game': game, 'form': form, 'bet_summary': sorted_bet_summary}
+    context = {
+        'game': game,
+        'form': form,
+        'bet_summary': sorted_bet_summary,
+        'user_can_submit': user_can_submit,
+        'user_deadline': user_deadline,
+        'user_deadlines': user_deadlines,
+        'bet_visibility': bet_visibility,
+        'sorted_bets': sorted_bets,
+    }
     return render(request, 'betting/game_detail.html', context)
 
 
