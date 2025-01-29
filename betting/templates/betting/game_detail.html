@@ -79,7 +79,7 @@
 {% if game.has_started %}
     {% if perms.betting.add_game %}
     <div class="row g-0">
-        <h4>Messenger-boten</h4>
+        <h4>Messenger-boten<i class="ms-2 bi bi-messenger text-primary"></i></h4>
         <div class="col border rounded py-2">
             {% for bet, users in bet_summary %}
                 <div class="ps-4">{{ bet }}: {% for user in users %}{{ user }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
