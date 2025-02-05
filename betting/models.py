@@ -75,16 +75,16 @@ class Game(models.Model):
             return 'X'
         else:
             return '2'
-        
+
     def get_deadline(self, user):
         """Dynamically calculates the submission deadline for this user in this game."""
         if not user.is_authenticated:
             return None  # No deadline for anonymous users
-        
+
         leaderboard = (
             Bet.objects.filter(
                 game__start_time__year=self.start_time.year,
-                game__start_time__lt=timezone.now()
+                game__start_time__lt=self.start_time
             )
             .values('user')
             .annotate(total_score=Sum('points'))
@@ -161,7 +161,7 @@ class Bet(models.Model):
         if self.result() == self.game.result():
             points += 1
         return points
-    
+
     def can_submit(self):
         """Check if the user can still submit or modify this bet."""
         deadline = self.game.get_deadline(self.user)
@@ -208,14 +208,14 @@ class StandingPrediction(models.Model):
         ''' Returns the points for the standings bet '''
         points = 0
         standing = [(team_position.position, team_position.team) for team_position in standing.team_positions.all().prefetch_related("team").order_by('position')]
-        
+
         if self.competition == 3:
             predicted_standing = [Team.objects.get(team_id) for team_id in self.standing.split(',')]
             for position, team in enumerate(predicted_standing):
                 diff = position - standing.index(team)
                 points -= abs(diff)
             return points
-        
+
         top_teams = standing[:TOP_BOTTOM]
         bottom_teams = standing[-TOP_BOTTOM:]
 
