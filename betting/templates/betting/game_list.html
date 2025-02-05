@@ -1,29 +1,65 @@
 {% extends "betting/base.html" %}
 
 {% block content %}
-<h2>Kommande matcher</h2>
+
+{% if todays_games %}
+<h2>Dagens match(er)</h2>
 <section class="game-list">
-    {% if upcoming_games %}
+    {% if todays_games %}
     <div class="row mb-2">
-        {% for game, v in upcoming_games.items %}
+        {% for entry in todays_games %}
         <div class="col-md-6 col-xl-4">
             <div class="row g-0 border rounded overflow-hidden flex-md-row mb-2 shadow-sm h-md-250 position-relative">
                 <div class="col p-4 d-flex flex-column position-static">
                     <div class="d-flex flex-row mb-2 text-body-secondary">
-                        <strong class="text-primary-emphasis">{{ game.start_time }}</strong>
+                        <strong class="text-primary-emphasis">{{ entry.game.start_time }}</strong>
                         <span class="mx-1">|</span>
-                        {{ game.competition}}
-                        {% if v.user_has_bet %}<i class="ms-auto bi bi-check-circle-fill text-success"></i>{% endif %}
+                        {{ entry.game.competition}}
+                        {% if entry.user_has_bet %}<i class="ms-auto bi bi-check-circle-fill text-success"></i>{% endif %}
                     </div>
                     <div class="d-flex flex-row">
-                        <img src="{% if game.home_team.logo %}{{ game.home_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
-                        <p class="h5 text-nowrap">{{ game.home_team }}</p>
+                        <img src="{% if entry.game.home_team.logo %}{{ entry.game.home_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                        <p class="h5 text-nowrap">{{ entry.game.home_team }}</p>
                     </div>
                     <div class="d-flex flex-row">
-                        <img src="{% if game.away_team.logo %}{{ game.away_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
-                        <p class="h5 text-nowrap">{{ game.away_team }}</p>
+                        <img src="{% if entry.game.away_team.logo %}{{ entry.game.away_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                        <p class="h5 text-nowrap">{{ entry.game.away_team }}</p>
                     </div>
-                    <a href="{% url 'betting:detail' game.id %}" class="stretched-link"></a>
+                    <a href="{% url 'betting:detail' entry.game.id %}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+        <p>Inga matcher inlagda.</p>
+    {% endif %}
+</section>
+{% endif %}
+
+<h2 {% if todays_games %} class="border-top border-5 border-dark mt-3 pt-3" {% endif %}>Kommande matcher</h2>
+<section class="game-list">
+    {% if upcoming_games %}
+    <div class="row mb-2">
+        {% for entry in upcoming_games %}
+        <div class="col-md-6 col-xl-4">
+            <div class="row g-0 border rounded overflow-hidden flex-md-row mb-2 shadow-sm h-md-250 position-relative">
+                <div class="col p-4 d-flex flex-column position-static">
+                    <div class="d-flex flex-row mb-2 text-body-secondary">
+                        <strong class="text-primary-emphasis">{{ entry.game.start_time }}</strong>
+                        <span class="mx-1">|</span>
+                        {{ entry.game.competition}}
+                        {% if entry.user_has_bet %}<i class="ms-auto bi bi-check-circle-fill text-success"></i>{% endif %}
+                    </div>
+                    <div class="d-flex flex-row">
+                        <img src="{% if entry.game.home_team.logo %}{{ entry.game.home_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                        <p class="h5 text-nowrap">{{ entry.game.home_team }}</p>
+                    </div>
+                    <div class="d-flex flex-row">
+                        <img src="{% if entry.game.away_team.logo %}{{ entry.game.away_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                        <p class="h5 text-nowrap">{{ entry.game.away_team }}</p>
+                    </div>
+                    <a href="{% url 'betting:detail' entry.game.id %}" class="stretched-link"></a>
                 </div>
             </div>
         </div>
@@ -38,25 +74,25 @@
 <section class="game-list">
     {% if past_games %}
     <div class="row mb-2">
-        {% for game, v in past_games.items %}
+        {% for entry in past_games %}
         <div class="col-md-6 col-xl-4">
             <div class="row g-0 border rounded overflow-hidden flex-md-row mb-2 shadow-sm h-md-250 position-relative">
                 <div class="col p-4 d-flex flex-column position-static">
                     <div class="d-flex flex-row mb-2 text-body-secondary">
-                        <strong class="text-primary-emphasis">{{ game.start_time }}</strong>
+                        <strong class="text-primary-emphasis">{{ entry.game.start_time }}</strong>
                         <span class="mx-1">|</span>
-                        {{ game.competition}}
-                        <i class="ms-auto bi {% if v.user_has_bet %}bi-check-circle-fill text-success{% else %}bi-x-circle-fill text-danger{% endif %}"></i>
+                        {{ entry.game.competition}}
+                        <i class="ms-auto bi {% if entry.user_has_bet %}bi-check-circle-fill text-success{% else %}bi-x-circle-fill text-danger{% endif %}"></i>
                     </div>
                     <div class="d-flex flex-row">
-                        <img src="{% if game.home_team.logo %}{{ game.home_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
-                        <p class="h5 text-nowrap">{{ game.home_team }}</p>
+                        <img src="{% if entry.game.home_team.logo %}{{ entry.game.home_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                        <p class="h5 text-nowrap">{{ entry.game.home_team }}</p>
                     </div>
                     <div class="d-flex flex-row">
-                        <img src="{% if game.away_team.logo %}{{ game.away_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
-                        <p class="h5 text-nowrap">{{ game.away_team }}</p>
+                        <img src="{% if entry.game.away_team.logo %}{{ entry.game.away_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                        <p class="h5 text-nowrap">{{ entry.game.away_team }}</p>
                     </div>
-                    <a href="{% url 'betting:detail' game.id %}" class="stretched-link"></a>
+                    <a href="{% url 'betting:detail' entry.game.id %}" class="stretched-link"></a>
                 </div>
             </div>
         </div>

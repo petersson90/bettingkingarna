@@ -66,21 +66,29 @@ def game_list(request):
     ''' Listing all past and upcoming games in the current year '''
     current_datetime = timezone.now()
 
-    upcoming_games = Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__gte=current_datetime, start_time__year=current_datetime.year, competition__excluded=False).order_by('start_time')
-    upcoming_games_with_bets = {}
-    for game in upcoming_games:
-        user_has_bet = Bet.objects.filter(user=request.user, game=game).exists()
-        upcoming_games_with_bets[game] = {'user_has_bet': user_has_bet}
+    all_games = Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__year=current_datetime.year, competition__excluded=False).order_by('start_time')
+    user_bets = Bet.objects.filter(user=request.user, game__in=all_games).values_list('game_id', flat=True)
+    user_bet_games = set(user_bets)
 
-    past_games = Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__lt=current_datetime, start_time__year=current_datetime.year, competition__excluded=False).order_by('-start_time')
-    past_games_with_bets = {}
-    for game in past_games:
-        user_has_bet = Bet.objects.filter(user=request.user, game=game).exists()
-        past_games_with_bets[game] = {'user_has_bet': user_has_bet}
+    past_games, todays_games, upcoming_games = [], [], []
+
+    for game in all_games:
+        game_info = {
+            'game': game,
+            'user_has_bet': game.id in user_bet_games
+        }
+
+        if game.start_time.date() == current_datetime.date():
+            todays_games.append(game_info)
+        elif game.start_time < current_datetime:
+            past_games.append(game_info)
+        else:
+            upcoming_games.append(game_info)
 
     context = {
-        'past_games': past_games_with_bets,
-        'upcoming_games': upcoming_games_with_bets,
+        'past_games': past_games,
+        'todays_games': todays_games,
+        'upcoming_games': upcoming_games,
     }
 
     return render(request, 'betting/game_list.html', context)
