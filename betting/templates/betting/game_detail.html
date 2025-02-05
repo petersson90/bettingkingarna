@@ -19,7 +19,7 @@
             <img src="{% if game.away_team.logo %}{{ game.away_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 2.25rem; width: 2.25rem;">
             <p class="h2 text-nowrap flex-grow-1">{{ game.away_team }}</p>
             {% if game.has_started %}<p class="h2 ms-auto me-2">{{ game.away_goals }}</p>{% endif %}
-            
+
         </div>
     </div>
 </div>
@@ -46,7 +46,7 @@
             <!-- <td>{{ bet.created }}</td>
             <td>{% if bet.is_updated %}{{ bet.updated }}{% endif %}</td> -->
             <td>{{ user_deadlines|get_item:bet.user.id|date:"H:i" }}</td>
-            <td>{% if not game.has_started and request.user == bet.user %}<a href="{% url 'betting:delete-bet' game.id bet.id %}" class="link-danger"><i class="bi bi-trash3-fill"></i></a>{% endif %}</td>
+            <td>{% if user_can_submit and request.user == bet.user %}<a href="{% url 'betting:delete-bet' game.id bet.id %}" class="link-danger"><i class="bi bi-trash3-fill"></i></a>{% endif %}</td>
         </tr>
         {% endfor %}
     </tbody>
