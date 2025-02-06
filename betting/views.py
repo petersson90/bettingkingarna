@@ -67,15 +67,17 @@ def game_list(request):
     current_datetime = timezone.now()
 
     all_games = Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__year=current_datetime.year, competition__excluded=False).order_by('start_time')
-    user_bets = Bet.objects.filter(user=request.user, game__in=all_games).values_list('game_id', flat=True)
-    user_bet_games = set(user_bets)
+    if request.user.is_authenticated:
+        user_bets = set(Bet.objects.filter(user=request.user, game__in=all_games).values_list('game_id', flat=True))
+    else:
+        user_bets = set()
 
     past_games, todays_games, upcoming_games = [], [], []
 
     for game in all_games:
         game_info = {
             'game': game,
-            'user_has_bet': game.id in user_bet_games
+            'user_has_bet': game.id in user_bets
         }
 
         if game.start_time.date() == current_datetime.date():
