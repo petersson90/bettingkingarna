@@ -138,6 +138,8 @@ def game_details(request, game_id):
 
     sorted_bet_summary = sorted(bet_summary.items(), key=lambda x: (int(x[0].split('-')[0]) - int(x[0].split('-')[1]), -int(x[0].split('-')[1])))
 
+    messenger_bot_visibility = game.start_time - timezone.timedelta(minutes=10) < timezone.now()
+
     context = {
         'game': game,
         'form': form,
@@ -147,6 +149,7 @@ def game_details(request, game_id):
         'user_deadlines': user_deadlines,
         'bet_visibility': bet_visibility,
         'sorted_bets': sorted_bets,
+        'messenger_bot_visibility': messenger_bot_visibility,
     }
     return render(request, 'betting/game_detail.html', context)
 
