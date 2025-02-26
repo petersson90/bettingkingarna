@@ -390,7 +390,7 @@ def standings_list(request):
         row['rank'] = rank
 
 
-    context = {'result': result, 'prizes': prizes}
+    context = {'result': result, 'prizes': prizes, 'selected_year': selected_year}
     return render(request, 'betting/standings.html', context)
 
 
