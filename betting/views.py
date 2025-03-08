@@ -99,7 +99,7 @@ def game_list(request):
 @login_required(login_url='betting:login')
 def game_details(request, game_id):
     ''' Shows details about a specific game '''
-    game = get_object_or_404(Game.objects.select_related('home_team', 'away_team').prefetch_related('bets', 'bets__user'), pk=game_id)
+    game = get_object_or_404(Game.objects.select_related('home_team', 'away_team', 'competition').prefetch_related('bets__user'), pk=game_id)
     try:
         bet = Bet.objects.get(user=request.user, game_id=game_id)
     except Bet.DoesNotExist:
@@ -113,16 +113,14 @@ def game_details(request, game_id):
             form.save()
             return redirect('betting:detail', game_id=game_id)
         
+    # Get deadlines for all users
+    user_deadlines = game.get_deadlines()
+        
     # Get the current user's bet deadline
-    user_deadline = game.get_deadline(request.user)
+    user_deadline = user_deadlines.get(request.user)
 
     # Determine if the user can submit a bet
     user_can_submit = timezone.now() < user_deadline
-
-    # Create a mapping of users to their respective deadlines
-    user_deadlines = {
-        bet.user.id: game.get_deadline(bet.user) for bet in game.bets.all()
-    }
 
     # Sort bets by user deadline (earliest first)
     sorted_bets = sorted(game.bets.all(), key=lambda bet: user_deadlines.get(bet.user.id))
@@ -138,7 +136,7 @@ def game_details(request, game_id):
 
     sorted_bet_summary = sorted(bet_summary.items(), key=lambda x: (int(x[0].split('-')[0]) - int(x[0].split('-')[1]), -int(x[0].split('-')[1])))
 
-    messenger_bot_visibility = game.start_time - timezone.timedelta(minutes=10) < timezone.now()
+    messenger_bot_visibility = max(user_deadlines.values()) < timezone.now()
 
     context = {
         'game': game,

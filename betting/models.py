@@ -4,7 +4,8 @@ from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.db.models import Case, When, Sum
+from django.db.models import Case, When, Sum, Window, F, IntegerField, ExpressionWrapper
+from django.db.models.functions import Rank, Abs
 from django.urls import reverse
 
 import math
@@ -76,34 +77,65 @@ class Game(models.Model):
         else:
             return '2'
 
-    def get_deadline(self, user):
-        """Dynamically calculates the submission deadline for this user in this game."""
-        if not user.is_authenticated:
-            return None  # No deadline for anonymous users
-
-        leaderboard = (
+    def get_leaderboard(self):
+        """Return the leaderboard at the start of this game."""
+        return (
             Bet.objects.filter(
                 game__start_time__year=self.start_time.year,
                 game__start_time__lt=self.start_time
             )
             .values('user')
-            .annotate(total_score=Sum('points'))
-            .order_by('-total_score')
+            .prefetch_related('user')
+            .annotate(
+                total_score=Sum('points'),
+                goal_difference=Sum(
+                    ExpressionWrapper(
+                        Case(
+                            When(game__home_team__id = 1, then=(F('game__away_goals') - F('game__home_goals')) - (F('away_goals') - F('home_goals'))),
+                            default=(F('game__home_goals') - F('game__away_goals')) - (F('home_goals') - F('away_goals'))
+                        ),
+                        output_field=IntegerField()
+                    )
+                ),
+                goals_scored=Sum(
+                    ExpressionWrapper(
+                        Case(
+                            When(game__home_team__id = 1, then=F('home_goals') - F('game__home_goals')),
+                            default=F('away_goals') - F('game__away_goals')
+                        ),
+                        output_field=IntegerField()
+                    )
+                ),
+                position=Window(
+                    expression=Rank(),
+                    order_by=[
+                        F('total_score').desc(),
+                        Abs(F('goal_difference')).asc(),
+                        Abs(F('goals_scored')).asc()
+                    ]
+                )
+            )
         )
 
-        # Determine user's position in the leaderboard
-        user_position = 0
-        for index, entry in enumerate(leaderboard, start=1):
-            if entry['user'] == user.id:
-                user_position = index
-                break
+    def get_deadlines(self):
+        """Return the deadlines for all users in this game."""
+        leaderboard = self.get_leaderboard()
 
-        if user_position == 0:
-            time_before_game = timezone.timedelta(minutes=0)
-        else:
-            # Calculate deadline (Starting 60 minutes before start, each pair get 10 minutes to submit)
-            time_before_game = timezone.timedelta(minutes=60 - math.ceil(user_position / 2) * 10)
-        return self.start_time - time_before_game
+        user_deadlines = {
+            entry['user']: self.start_time - timezone.timedelta(minutes=60 - math.ceil(entry['position'] / 2) * 10)
+            for entry in leaderboard
+        }
+
+        return user_deadlines
+
+    def get_deadline(self, user):
+        """Dynamically calculates the submission deadline for this user in this game."""
+        if not user.is_authenticated:
+            return None  # No deadline for anonymous users
+
+        deadlines = self.get_deadlines()
+
+        return deadlines.get(user.id, None)
 
 
 class Bet(models.Model):
