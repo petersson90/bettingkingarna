@@ -196,8 +196,8 @@ class Bet(models.Model):
 
     def can_submit(self):
         """Check if the user can still submit or modify this bet."""
-        deadline = self.game.get_deadline(self.user)
-        return timezone.now() <= deadline if deadline else False
+        deadline = self.game.get_deadlines().get(self.user, self.game.start_time)
+        return timezone.now() <= deadline
 
     def save(self, *args, game_updated=False, **kwargs):
         ''' Update of the save method to restrict saving after the game has started '''
