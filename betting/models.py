@@ -1,10 +1,11 @@
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.db.models import Case, When, Sum, Window, F, IntegerField, ExpressionWrapper
+from django.db.models import Case, When, Sum, Window, F, IntegerField, ExpressionWrapper, Min
 from django.db.models.functions import Rank, Abs
 from django.urls import reverse
 
@@ -79,13 +80,12 @@ class Game(models.Model):
 
     def get_leaderboard(self):
         """Return the leaderboard at the start of this game."""
-        return (
+        leaderboard = (
             Bet.objects.filter(
                 game__start_time__year=self.start_time.year,
                 game__start_time__lt=self.start_time
             )
             .values('user')
-            .prefetch_related('user')
             .annotate(
                 total_score=Sum('points'),
                 goal_difference=Sum(
@@ -116,6 +116,14 @@ class Game(models.Model):
                 )
             )
         )
+
+        User = get_user_model()
+        users = {user.id: user for user in User.objects.all()}
+
+        for row in leaderboard:
+            row['user'] = users.get(row['user'])
+
+        return leaderboard
 
     def get_deadlines(self):
         """Return the deadlines for all users in this game."""

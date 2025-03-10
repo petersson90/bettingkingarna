@@ -115,19 +115,19 @@ def game_details(request, game_id):
         
     # Get deadlines for all users
     user_deadlines = game.get_deadlines()
-        
-    # Get the current user's bet deadline
-    user_deadline = user_deadlines.get(request.user)
-
-    # Determine if the user can submit a bet
+    max_user_deadline = max(user_deadlines.values(), default=game.start_time)
+    user_deadline = user_deadlines.get(request.user, max_user_deadline)
     user_can_submit = timezone.now() < user_deadline
 
-    # Sort bets by user deadline (earliest first)
-    sorted_bets = sorted(game.bets.all(), key=lambda bet: user_deadlines.get(bet.user.id))
+    submitted_bets = {bet.user: bet for bet in game.bets.all()}
 
-    # Determine visibility for each bet
-    bet_visibility = {
-        bet.user.id: timezone.now() > user_deadlines.get(bet.user.id) for bet in game.bets.all()
+    details_per_user = {
+        user: {
+            'deadline': user_deadlines.get(user),
+            'bet': submitted_bets.get(user, None),
+            'bet_visibility': timezone.now() > user_deadlines.get(user),
+        }
+        for user in user_deadlines
     }
 
     bet_summary = {}
@@ -136,7 +136,7 @@ def game_details(request, game_id):
 
     sorted_bet_summary = sorted(bet_summary.items(), key=lambda x: (int(x[0].split('-')[0]) - int(x[0].split('-')[1]), -int(x[0].split('-')[1])))
 
-    messenger_bot_visibility = max(user_deadlines.values()) < timezone.now()
+    messenger_bot_visibility = max_user_deadline < timezone.now()
 
     context = {
         'game': game,
@@ -144,9 +144,7 @@ def game_details(request, game_id):
         'bet_summary': sorted_bet_summary,
         'user_can_submit': user_can_submit,
         'user_deadline': user_deadline,
-        'user_deadlines': user_deadlines,
-        'bet_visibility': bet_visibility,
-        'sorted_bets': sorted_bets,
+        'details_per_user': details_per_user,
         'messenger_bot_visibility': messenger_bot_visibility,
     }
     return render(request, 'betting/game_detail.html', context)

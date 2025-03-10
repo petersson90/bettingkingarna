@@ -29,7 +29,7 @@
     <thead>
         <tr>
             <th scope="col">Namn</th>
-            <th scope="col">Resultat</th>
+            <th scope="col">Bet</th>
             <th scope="col">Poäng</th>
             <!-- <th scope="col">Skapat</th>
             <th scope="col">Uppdaterat</th> -->
@@ -38,15 +38,26 @@
         </tr>
     </thead>
     <tbody class="table-group-divider">
-        {% for bet in sorted_bets %}
-        <tr class="{% if request.user == bet.user %}table-active{% endif %}">
-            <td>{{ bet.user }}</td>
-            <td>{% if game.has_started or request.user == bet.user or bet_visibility|get_item:bet.user.id %}{{ bet.result }}{% endif %}</td>
-            <td>{% if game.has_started %}{{ bet.points|default_if_none:"-" }}{% endif %}</td>
-            <!-- <td>{{ bet.created }}</td>
-            <td>{% if bet.is_updated %}{{ bet.updated }}{% endif %}</td> -->
-            <td>{{ user_deadlines|get_item:bet.user.id|date:"H:i" }}</td>
-            <td>{% if user_can_submit and request.user == bet.user %}<a href="{% url 'betting:delete-bet' game.id bet.id %}" class="link-danger"><i class="bi bi-trash3-fill"></i></a>{% endif %}</td>
+        {% for user, details in details_per_user.items %}
+        <tr class="{% if request.user == user %}table-active{% endif %}">
+            <td>{{ user }}</td>
+            <td>{% if details.bet_visibility or game.has_started %}
+                    {% if details.bet %}
+                        {{ details.bet.result }}
+                    {% else %}
+                        <i class="bi bi-x-circle-fill text-danger"></i>
+                    {% endif %}
+                {% elif request.user == user %}
+                    {{ details.bet.result }}
+                {% elif details.bet %}
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                {% endif %}
+            </td>
+            <td>{% if game.has_started %}{{ details.bet.points|default_if_none:"-" }}{% endif %}</td>
+            <!-- <td>{{ details.bet.created }}</td>
+            <td>{% if details.bet.is_updated %}{{ details.bet.updated }}{% endif %}</td> -->
+            <td>{{ details.deadline|date:"H:i" }}</td>
+            <td>{% if details.bet and not details.bet_visibility and request.user == user %}<a href="{% url 'betting:delete-bet' game.id details.bet.id %}" class="link-danger"><i class="bi bi-trash3-fill"></i></a>{% endif %}</td>
         </tr>
         {% endfor %}
     </tbody>
