@@ -23,12 +23,12 @@
                     <ul class="navbar-nav me-auto">
                         {% if request.user.is_authenticated %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'betting:index' %}">Matchbet</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'betting:table-bet-summary' 8 %}">Tabellbet</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'betting:table-bet-summary' 13 %}">Tabellbet</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'betting:list-standings' %}">Bettingkingarna-tabell</a></li>
-                        {% comment %} <li class="nav-item"><a class="nav-link" href="{% url 'betting:statistics' 2023 %}">Statistik</a></li> {% endcomment %}
+                        <!-- <li class="nav-item"><a class="nav-link" href="{% url 'betting:statistics' 2025 %}">Statistik</a></li> -->
                         {% if perms.betting.add_team %}<li class="nav-item"><a class="nav-link" href="{% url 'betting:list-team' %}">Visa/skapa lag</a></li>{% endif %}
                         {% if perms.betting.add_game %}<li class="nav-item"><a class="nav-link" href="{% url 'betting:create-game' %}">Skapa match</a></li>{% endif %}
-                        <li class="nav-item"><a class="nav-link" href="{% url 'betting:competition-overview' 9 %}">EM 2024</a></li>
+                        <!-- <li class="nav-item"><a class="nav-link" href="{% url 'betting:competition-overview' 9 %}">EM 2024</a></li> -->
                         {% endif %}
                     </ul>
                     {% if not request.user.is_authenticated %}
