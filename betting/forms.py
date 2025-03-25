@@ -1,4 +1,4 @@
-from django.forms import ModelForm, ChoiceField, Select, ModelChoiceField, DateTimeInput
+from django.forms import ModelForm, ChoiceField, Select, ModelChoiceField, DateTimeInput, IntegerField
 from .models import Team, Game, Bet, StandingPrediction, StandingPredictionTeam
 
 class CustomModelForm(ModelForm):
@@ -86,3 +86,42 @@ class TableBetForm(CustomModelForm):
             if selected_team in selected_teams:
                 self.add_error(f'position_{position}', 'Varje lag får bara väljas en gång')
             selected_teams.add(selected_team)
+
+
+class TeamPositionBetForm(CustomModelForm):
+    class Meta:
+        model = StandingPrediction
+        fields = ['top_scorer', 'most_assists']
+        labels = {
+            'top_scorer': 'Vilken spelare tror du vinner skytteligan? (Ange två alternativ)',
+            'most_assists': 'Vilken spelare tror du vinner assistligan? (Ange två alternativ)',
+        }
+
+    def __init__(self, *args, competition, teams=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.competition = competition
+
+        if teams is None:
+            teams = competition.teams.all()
+        else:
+            self.teams = teams
+            
+        for team in teams:
+            self.fields[f'position_team_{team.id}'] = IntegerField(
+                label=f'{team.name}',
+                required=True,
+                min_value=1,
+                max_value=competition.teams.count(),
+                initial=StandingPredictionTeam.objects.get(standing_prediction=self.instance, team=team).position if self.instance.id else None,
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        selected_positions = set()
+
+        # Ensure no duplicate teams are selected
+        for team in self.teams:
+            position = cleaned_data.get(f'position_team_{team.id}')
+            if position in selected_positions:
+                self.add_error(f'position_team_{team.id}', 'Varje position får bara väljas en gång')
+            selected_positions.add(position)

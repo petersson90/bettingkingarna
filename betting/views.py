@@ -10,10 +10,11 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django_ical.views import ICalFeed
 from accounts.models import CustomUser
-from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm, TableBetForm
+from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm, TableBetForm, TeamPositionBetForm
 from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPredictionTeam, Standing, TeamPosition
 
 DEADLINE_2024 = timezone.make_aware(timezone.datetime(2024, 4, 7, 11))
+DEADLINE_2025 = timezone.make_aware(timezone.datetime(2025, 3, 29, 15))
 ALLSVENSKAN_2023 = '1,18,23,3,5,4,6,13,11,15,7,29,22,30,8,24'
 TOP_SCORER_2023 = 'Isaac Kiese Thelin'
 MOST_ASSISTS_2023 = 'Mikkel Rygaard Jensen'
@@ -784,13 +785,16 @@ def table_bet(request, competition_id):
     ''' Show bet for current user for a specific competition standings '''
     competition = get_object_or_404(Competition, pk=competition_id)
     teams = []
+    team_list = []
     top_scorer = None
     most_assists = None
     bet_positions = None
     if competition_id == 1:
         bet_positions = [1, 2, 3, 14, 15, 16]
-    if competition_id == 8:
+    elif competition_id == 8:
         bet_positions = [1, 2, 3, 4, 13, 14, 15, 16]
+    elif competition_id == 13:
+        team_list = [Team.objects.get(name='Mjällby AIF')]
 
     try:
         user_bet = StandingPrediction.objects.get(user=request.user, competition=competition)
@@ -802,11 +806,14 @@ def table_bet(request, competition_id):
         user_bet = StandingPrediction(user=request.user, competition=competition)
 
     if request.method == 'POST':
-        if competition_id == 8 and timezone.now() >= DEADLINE_2024:
+        if (competition_id == 8 and timezone.now() >= DEADLINE_2024) or (competition_id == 13 and timezone.now() >= DEADLINE_2025):
             messages.error(request, 'Deadline har passerat och inga nya eller ändrade bet kan läggas.')
             return redirect('betting:table-bet', competition_id)
 
-        form = TableBetForm(competition=competition, bet_positions=bet_positions, data=request.POST, instance=user_bet)
+        if competition_id == 13:
+            form = TeamPositionBetForm(competition=competition, teams=team_list, data=request.POST, instance=user_bet)
+        else:
+            form = TableBetForm(competition=competition, bet_positions=bet_positions, data=request.POST, instance=user_bet)
         if form.is_valid():
             user_bet = form.save(commit=False)
             user_bet.user = request.user
@@ -816,16 +823,24 @@ def table_bet(request, competition_id):
             with transaction.atomic():
                 StandingPredictionTeam.objects.filter(standing_prediction=user_bet).delete()
 
-                for i in bet_positions:
-                    team = form.cleaned_data[f'position_{i}']
-                    StandingPredictionTeam.objects.update_or_create(standing_prediction=user_bet, position=i, defaults={'team': team})
+                if competition_id == 13:
+                    for team in team_list:
+                        position = form.cleaned_data[f'position_team_{team.id}']
+                        StandingPredictionTeam.objects.update_or_create(standing_prediction=user_bet, position=position, defaults={'team': team})
+                else:
+                    for position in bet_positions:
+                        team = form.cleaned_data[f'position_{position}']
+                        StandingPredictionTeam.objects.update_or_create(standing_prediction=user_bet, position=position, defaults={'team': team})
 
             return redirect('betting:table-bet', competition_id)
     else:
-        form = TableBetForm(competition=competition, bet_positions=bet_positions, instance=user_bet)
+        if competition_id == 13:
+            form = TeamPositionBetForm(competition=competition, teams=team_list, instance=user_bet)
+        else:
+            form = TableBetForm(competition=competition, bet_positions=bet_positions, instance=user_bet)
 
 
-    if competition_id == 8 and timezone.now() >= DEADLINE_2024:
+    if (competition_id == 8 and timezone.now() >= DEADLINE_2024) or (competition_id == 13 and timezone.now() >= DEADLINE_2025):
         form = None
 
     context = {
@@ -959,7 +974,50 @@ def table_bet_summary(request, competition_id):
                 teams[i].append((row['teams'][i], row['bet_points'][i]))
 
         current_standings = teams
+    
+    elif competition_id == 13:
+        sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
+        top_scorer = standings.top_scorer
+        most_assists = standings.most_assists
+    
+        current_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
 
+        standing_predictions = []
+        for standing_prediction in all_standing_predictions:
+            teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in standing_prediction.team_positions.all()]
+            user_top_scorer = standing_prediction.top_scorer
+            user_most_assists = standing_prediction.most_assists
+
+            bet_points = []
+            for position, team in teams:
+                diff = position - current_standings.index(team) - 1
+                bet_points.append(-abs(diff))
+            points = sum(bet_points)
+
+            standing_predictions.append({
+                'user': standing_prediction.user,
+                'teams': teams,
+                'bet_points': bet_points,
+                'points': points,
+                'top_scorer': user_top_scorer,
+                'most_assists': user_most_assists
+            })
+
+        # Hide all standing predictions if the competition has not started yet
+        if competition_id == 13 and timezone.now() < DEADLINE_2025:
+            standing_predictions = []
+
+        teams = []
+
+        current_standings = [[((position, team), 0)] for position, team in enumerate(current_standings, 1)]
+
+        for i, _ in enumerate(current_standings):
+            for row in standing_predictions:
+                for position, team in row['teams']:
+                    list_position = row['teams'].index((position, team))
+                    if i + 1 == position:
+                        current_standings[i].append(((position, team), row['bet_points'][list_position]))
+    
     else:
         current_standings = []
         top_scorer = ''

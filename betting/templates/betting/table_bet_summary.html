@@ -20,7 +20,7 @@
           <div class="d-flex align-items-start">
             <span class="me-2">{{ team.0.1 }}</span>
             {% if not forloop.first %}<span
-              class="ms-auto px-2 {% if not forloop.first %} {% if competition.season == '2023' %} {% if team.1 == 0 %} text-bg-success {% elif team.1 < -5 %} text-bg-danger {% elif team.1 < -2 %} text-bg-warning {% else %} text-bg-secondary {% endif %} {% else %} {% if team.1 == POINTS_CORRECT %} text-bg-success {% elif team.1 == POINTS_ALMOST %} text-bg-warning {% else %} text-bg-secondary {% endif %} {% endif %} {% endif %}"
+              class="ms-auto px-2 {% if not forloop.first %} {% if competition.season == '2023' or competition.season == '2025' %} {% if team.1 == 0 %} text-bg-success {% elif team.1 < -5 %} text-bg-danger {% elif team.1 < -2 %} text-bg-warning {% else %} text-bg-secondary {% endif %} {% else %} {% if team.1 == POINTS_CORRECT %} text-bg-success {% elif team.1 == POINTS_ALMOST %} text-bg-warning {% else %} text-bg-secondary {% endif %} {% endif %} {% endif %}"
               >{{ team.1 }}</span
             >{% endif %}
           </div>
