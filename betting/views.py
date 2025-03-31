@@ -1017,6 +1017,8 @@ def table_bet_summary(request, competition_id):
                     list_position = row['teams'].index((position, team))
                     if i + 1 == position:
                         current_standings[i].append(((position, team), row['bet_points'][list_position]))
+                    else:
+                        current_standings[i].append(((i + 1, ), ))
     
     else:
         current_standings = []
