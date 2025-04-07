@@ -87,7 +87,7 @@ class Game(models.Model):
             )
             .values('user')
             .annotate(
-                total_score=Sum('points'),
+                game_points=Sum('points'),
                 goal_difference=Sum(
                     ExpressionWrapper(
                         Case(
@@ -109,7 +109,7 @@ class Game(models.Model):
                 position=Window(
                     expression=Rank(),
                     order_by=[
-                        F('total_score').desc(),
+                        F('game_points').desc(),
                         Abs(F('goal_difference')).asc(),
                         Abs(F('goals_scored')).asc()
                     ]
@@ -120,8 +120,62 @@ class Game(models.Model):
         User = get_user_model()
         users = {user.id: user for user in User.objects.all()}
 
+        competition = Competition.objects.get(pk=self.competition.id)
+        standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
+        sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
+        competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
+        top_scorer_list = standings.top_scorer
+        most_assists_list = standings.most_assists
+
+        try:
+            user_standing_predictions = StandingPrediction.objects.select_related('user').prefetch_related('team_positions__team').filter(competition=competition)
+            table_points = {}            
+            for user_standing_prediction in user_standing_predictions:
+                user = user_standing_prediction.user
+                teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in user_standing_prediction.team_positions.all()]
+                user_top_scorer = user_standing_prediction.top_scorer
+                user_most_assists = user_standing_prediction.most_assists
+                    
+                bet_points = []
+                for position, team in teams:
+                    diff = position - competition_standings.index(team) - 1
+                    bet_points.append(-abs(diff))
+                user_table_points = sum(bet_points)
+
+                extra_bet = 0
+
+                if user_top_scorer in top_scorer_list:
+                    extra_bet += 6
+                if user_most_assists in most_assists_list:
+                    extra_bet += 6
+                
+                table_points[user] = {
+                    'points': user_table_points,
+                    'extra_bet': extra_bet
+                }
+
+        except StandingPrediction.DoesNotExist:
+            user_top_scorer = 'N/A'
+            user_most_assists = 'N/A'
+
+        
         for row in leaderboard:
             row['user'] = users.get(row['user'])
+            row['table_points'] = table_points.get(row['user'], {}).get('points', 0)
+            row['extra_bet'] = table_points.get(row['user'], {}).get('extra_bet', 0)
+            row['total_score'] = row.get('game_points', 0) + row.get('table_points', 0) + row.get('extra_bet', 0)
+
+        leaderboard = sorted(
+            leaderboard,
+            key=lambda x: (
+                -x['total_score'],
+                abs(x['goal_difference']),
+                abs(x['goals_scored'])
+            )
+        )
+
+        for position, entry in enumerate(leaderboard, 1):
+            entry['position'] = position
 
         return leaderboard
 
