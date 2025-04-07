@@ -273,9 +273,9 @@ def standings_list(request):
         competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
     elif selected_year == '2025':
         competition = Competition.objects.get(pk=13)
-        # standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
-        # sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
-        # competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
+        standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
+        sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
+        competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
 
 
     result = []
@@ -303,11 +303,6 @@ def standings_list(request):
             user_table_points = user_standing_prediction.calculate_points(standings, 4, 6, 2)
             user_top_scorer = user_standing_prediction.top_scorer
             user_most_assists = user_standing_prediction.most_assists
-        elif selected_year == '2025':
-            # user_standing_prediction = StandingPrediction.objects.get(user=user.id, competition=competition)
-            user_table_points = 0 # user_standing_prediction.calculate_points(standings, 4, 6, 2)
-            user_top_scorer = '' # user_standing_prediction.top_score
-            user_most_assists = '' # user_standing_prediction.most_assists
         else:
             user_table_points = 0
             try:
@@ -340,7 +335,7 @@ def standings_list(request):
     if selected_year == '2023':
         top_scorer_list = TOP_SCORER_2023
         most_assists_list = MOST_ASSISTS_2023
-    elif selected_year == '2024':
+    elif selected_year == '2024' or selected_year == '2025':
         top_scorer_list = standings.top_scorer
         most_assists_list = standings.most_assists
 
