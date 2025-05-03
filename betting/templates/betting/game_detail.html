@@ -67,7 +67,7 @@
 {% endif %}
 
 {% if user_can_submit %}
-<div class="row">
+<div class="row mb-3">
     <h3>Lägg till/ändra bet</h3>
     <p>Deadline för ditt bet: {{ user_deadline }}</p>
     <div class="col col-md-6">
@@ -87,17 +87,26 @@
     </div>
 </div>
 {% endif %}
-{% if messenger_bot_visibility %}
-    {% if perms.betting.add_game %}
-    <div class="row g-0">
-        <h4>Messenger-boten<i class="ms-2 bi bi-messenger text-primary"></i></h4>
-        <div class="col border rounded py-2">
-            {% for bet, users in bet_summary %}
-                <div class="ps-4">{{ bet }}: {% for user in users %}{{ user }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
-            {% endfor %}
+
+<div class="accordion" id="accordionGameDetails">
+    {% if messenger_bot_visibility and perms.betting.add_game %}
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#messengerBot" aria-expanded="false" aria-controls="messengerBot">
+                Messenger-boten<i class="ms-2 bi bi-messenger text-primary"></i>
+            </button>
+        </h2>
+        <div id="messengerBot" class="accordion-collapse collapse" data-bs-parent="#accordionGameDetails">
+            <div class="accordion-body">
+                <ul class="list-unstyled mb-0">
+                {% for bet, users in bet_summary %}
+                    <li>{{ bet }}: {% for user in users %}{{ user }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
+                {% endfor %}
+                </ul>
+            </div>
         </div>
     </div>
     {% endif %}
-{% endif %}
+</div>
 
 {% endblock %}
