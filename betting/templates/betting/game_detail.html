@@ -89,6 +89,38 @@
 {% endif %}
 
 <div class="accordion" id="accordionGameDetails">
+    {% if last_five_games %}
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#previousGames" aria-expanded="false" aria-controls="previousGames">
+                Tidigare möten
+            </button>
+        </h2>
+        <div id="previousGames" class="accordion-collapse collapse" data-bs-parent="#accordionGameDetails">
+            <div class="accordion-body">
+                {% for past_game in last_five_games %}
+                    <div class="border-bottom py-2">
+                        <div class="card-body">
+                            <p class="mb-2 text-body-secondary fw-medium">{{ past_game.start_time|date:"Y-m-d" }} | {{ past_game.competition.name }}</p>
+                            <div class="d-flex flex-row">
+                                <img src="{% if past_game.home_team.logo %}{{ past_game.home_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                                <p class="text-nowrap mb-1">{{ past_game.home_team }}</p>
+                                <p class="ms-auto me-2 mb-1"><span class="badge rounded-pill {% if past_game.threeway == '1' %}text-bg-success{% elif past_game.threeway == '2' %}text-bg-danger{% else %}text-bg-info{% endif %}">{{ past_game.home_goals }}</span></p>
+                            </div>
+                            <div class="d-flex flex-row">
+                                <img src="{% if past_game.away_team.logo %}{{ past_game.away_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
+                                <p class="text-nowrap mb-0">{{ past_game.away_team }}</p>
+                                <p class="ms-auto me-2 mb-0"><span class="badge rounded-pill {% if past_game.threeway == '1' %}text-bg-danger{% elif past_game.threeway == '2' %}text-bg-success{% else %}text-bg-info{% endif %}">{{ past_game.away_goals }}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p>Inga tidigare matcher finns registrerade mellan dessa lag.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
     {% if messenger_bot_visibility and perms.betting.add_game %}
     <div class="accordion-item">
         <h2 class="accordion-header">

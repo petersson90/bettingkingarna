@@ -139,6 +139,13 @@ def game_details(request, game_id):
 
     messenger_bot_visibility = max_user_deadline < timezone.now()
 
+    # Fetch last 5 games between the two teams
+    last_five_games = Game.objects.filter(
+        (Q(home_team=game.home_team, away_team=game.away_team) |
+         Q(home_team=game.away_team, away_team=game.home_team)) &
+        Q(start_time__lt=game.start_time)
+    ).order_by('-start_time')[:5]
+
     context = {
         'game': game,
         'form': form,
@@ -147,6 +154,7 @@ def game_details(request, game_id):
         'user_deadline': user_deadline,
         'details_per_user': details_per_user,
         'messenger_bot_visibility': messenger_bot_visibility,
+        'last_five_games': last_five_games,
     }
     return render(request, 'betting/game_detail.html', context)
 
