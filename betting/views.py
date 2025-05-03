@@ -349,11 +349,15 @@ def standings_list(request):
 
     for row in result:
         row['extra_bet'] = 0
+        top_scorers = row['top_scorer'].split(', ')
+        top_assists = row['most_assists'].split(', ')
 
-        if row['top_scorer'] in top_scorer_list:
-            row['extra_bet'] += 6
-        if row['most_assists'] in most_assists_list:
-            row['extra_bet'] += 6
+        for top_scorer in top_scorers:
+            if top_scorer in top_scorer_list:
+                row['extra_bet'] += 6
+        for most_assist in top_assists:
+            if most_assist in most_assists_list:
+                row['extra_bet'] += 6
 
         total_points = row['points'] + row['table_points'] + row['extra_bet']
         row['total_points'] = total_points

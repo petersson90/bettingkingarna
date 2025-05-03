@@ -137,8 +137,8 @@ class Game(models.Model):
             for user_standing_prediction in user_standing_predictions:
                 user = user_standing_prediction.user
                 teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in user_standing_prediction.team_positions.all()]
-                user_top_scorer = user_standing_prediction.top_scorer
-                user_most_assists = user_standing_prediction.most_assists
+                user_top_scorers = user_standing_prediction.top_scorer.split(', ')
+                user_most_assists = user_standing_prediction.most_assists.split(', ')
                     
                 bet_points = []
                 for position, team in teams:
@@ -148,10 +148,12 @@ class Game(models.Model):
 
                 extra_bet = 0
 
-                if user_top_scorer in top_scorer_list:
-                    extra_bet += 6
-                if user_most_assists in most_assists_list:
-                    extra_bet += 6
+                for user_top_scorer in user_top_scorers:
+                    if user_top_scorer in top_scorer_list:
+                        extra_bet += 6
+                for user_most_assist in user_most_assists:
+                    if user_most_assist in most_assists_list:
+                        extra_bet += 6
                 
                 table_points[user] = {
                     'points': user_table_points,
