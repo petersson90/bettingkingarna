@@ -18,30 +18,32 @@ class TeamModelTest(TestCase):
                     os.remove(team.logo.path)
 
     def test_team_string_representation(self):
-        team = Team.objects.create(name='Manchester United')
-        self.assertEqual(str(team), 'Manchester United')
+        team = Team.objects.create(name='Malmö FF')
+        self.assertEqual(str(team), 'Malmö FF')
 
     def test_team_with_logo(self):
         logo = SimpleUploadedFile('test_logo.svg', b'file_content', content_type='image/svg+xml')
-        team = Team.objects.create(name='Chelsea', logo=logo)
+        team = Team.objects.create(name='AIK', logo=logo)
         self.assertIsNotNone(team.id)
-        self.assertEqual(team.name, 'Chelsea')
+        self.assertEqual(team.name, 'AIK')
         self.assertIsNotNone(team.logo)
         self.assertEqual(team.logo.name, 'team_logos/test_logo.svg')
 
 
 class CompetitionModelTest(TestCase):
     def setUp(self):
-        self.team1 = Team.objects.create(name="Manchester United")
-        self.team2 = Team.objects.create(name="Arsenal")
-        self.team3 = Team.objects.create(name="Chelsea")
+        self.team1 = Team.objects.create(name="Malmö FF")
+        self.team2 = Team.objects.create(name="IFK Göteborg")
+        self.team3 = Team.objects.create(name="AIK")
 
     def test_competition_string_representation(self):
-        competition = Competition.objects.create(name="Premier League", season="23/24")
-        self.assertEqual(str(competition), "Premier League 23/24")
+        current_year = timezone.now().year
+        competition = Competition.objects.create(name="Allsvenskan", season=current_year)
+        self.assertEqual(str(competition), f"Allsvenskan {current_year}")
     
     def test_competition_cannot_have_duplicate_teams(self):
-        competition = Competition.objects.create(name="Premier League", season="23/24")
+        current_year = timezone.now().year
+        competition = Competition.objects.create(name="Allsvenskan", season=current_year)
         self.assertEqual(competition.teams.count(), 0)
         competition.teams.add(self.team1, self.team1)
         self.assertEqual(competition.teams.count(), 1)
@@ -49,9 +51,10 @@ class CompetitionModelTest(TestCase):
 
 class GameModelTest(TestCase):
     def setUp(self):
-        self.team1 = Team.objects.create(name="Manchester United")
-        self.team2 = Team.objects.create(name="Arsenal")
-        self.competition = Competition.objects.create(name="Premier League", season="23/24")
+        current_year = timezone.now().year
+        self.team1 = Team.objects.create(name="Malmö FF")
+        self.team2 = Team.objects.create(name="IFK Göteborg")
+        self.competition = Competition.objects.create(name="Allsvenskan", season=current_year)
 
     def test_game_string_representation(self):
         game = Game.objects.create(
@@ -60,7 +63,7 @@ class GameModelTest(TestCase):
             away_team=self.team2,
             start_time=timezone.now() + timezone.timedelta(hours=1),
         )
-        self.assertEqual(str(game), "Manchester United - Arsenal")
+        self.assertEqual(str(game), "Malmö FF - IFK Göteborg")
 
     def test_game_home_goals_cannot_be_negative(self):
         game = Game(
@@ -157,14 +160,15 @@ class GameModelTest(TestCase):
 
 class BetModelTest(TestCase):
     def setUp(self):
+        current_year = timezone.now().year
         # Create some related objects for testing
         self.user = get_user_model().objects.create_user(
             username = 'testuser',
             password = 'testpassword',
         )
-        self.team1 = Team.objects.create(name='Manchester United')
-        self.team2 = Team.objects.create(name='Arsenal')
-        self.competition = Competition.objects.create(name='Premier League', season='23/24')
+        self.team1 = Team.objects.create(name='Malmö FF')
+        self.team2 = Team.objects.create(name='IFK Göteborg')
+        self.competition = Competition.objects.create(name='Allsvenskan', season=current_year)
         self.game1 = Game.objects.create(
             competition=self.competition,
             home_team=self.team1,
@@ -253,24 +257,25 @@ class BetModelTest(TestCase):
 
 class StandingPredictionModelTest(TestCase):
     def setUp(self):
+        current_year = timezone.now().year
         # Create some related objects for testing
         self.user = get_user_model().objects.create_user(
             username = 'testuser',
             password = 'testpassword',
         )
-        self.team1 = Team.objects.create(name='Manchester United')
-        self.team2 = Team.objects.create(name='Arsenal')
-        self.team3 = Team.objects.create(name='Chelsea')
-        self.team4 = Team.objects.create(name='Liverpool')
-        self.team5 = Team.objects.create(name='Manchester City')
-        self.team6 = Team.objects.create(name='Tottenham Hotspur')
-        self.team7 = Team.objects.create(name='Leicester City')
-        self.team8 = Team.objects.create(name='West Ham United')
-        self.team9 = Team.objects.create(name='Everton')
-        self.team10 = Team.objects.create(name='Aston Villa')
-        self.team11 = Team.objects.create(name='Wolverhampton Wanderers')
-        self.team12 = Team.objects.create(name='Crystal Palace')
-        self.competition = Competition.objects.create(name='Premier League', season='23/24')
+        self.team1 = Team.objects.create(name='Malmö FF')
+        self.team2 = Team.objects.create(name='IFK Göteborg')
+        self.team3 = Team.objects.create(name='AIK')
+        self.team4 = Team.objects.create(name='Djurgårdens IF')
+        self.team5 = Team.objects.create(name='IFK Norrköping')
+        self.team6 = Team.objects.create(name='IF Elfsborg')
+        self.team7 = Team.objects.create(name='Hammarby IF')
+        self.team8 = Team.objects.create(name='Örebro SK')
+        self.team9 = Team.objects.create(name='Kalmar FF')
+        self.team10 = Team.objects.create(name='Östersunds FK')
+        self.team11 = Team.objects.create(name='Helsingborgs IF')
+        self.team12 = Team.objects.create(name='GIF Sundsvall')
+        self.competition = Competition.objects.create(name='Allsvenskan', season=current_year)
         self.competition.teams.add(self.team1, self.team2, self.team3, self.team4, self.team5, self.team6, self.team7, self.team8, self.team9, self.team10, self.team11, self.team12)
         self.standing_prediction = StandingPrediction.objects.create(user=self.user, competition=self.competition)
 

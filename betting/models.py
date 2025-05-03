@@ -121,7 +121,11 @@ class Game(models.Model):
         users = {user.id: user for user in User.objects.all()}
 
         competition = Competition.objects.get(name='Allsvenskan', season=self.start_time.year)
-        standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
+        try:
+            standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
+        except Standing.DoesNotExist:
+            standings = Standing.objects.create(competition=competition, round=1, top_scorer='N/A', most_assists='N/A')
+            
         sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
         competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
         top_scorer_list = standings.top_scorer
