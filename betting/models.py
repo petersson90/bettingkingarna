@@ -120,7 +120,7 @@ class Game(models.Model):
         User = get_user_model()
         users = {user.id: user for user in User.objects.all()}
 
-        competition = Competition.objects.get(pk=self.competition.id)
+        competition = Competition.objects.get(name='Allsvenskan', season=self.start_time.year)
         standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
         sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
         competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
