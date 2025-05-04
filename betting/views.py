@@ -84,7 +84,7 @@ def game_list(request):
         if game.start_time.date() == current_datetime.date():
             todays_games.append(game_info)
         elif game.start_time < current_datetime:
-            past_games.append(game_info)
+            past_games.insert(0, game_info)
         else:
             upcoming_games.append(game_info)
 

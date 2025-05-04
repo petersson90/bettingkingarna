@@ -87,10 +87,12 @@
                     <div class="d-flex flex-row">
                         <img src="{% if entry.game.home_team.logo %}{{ entry.game.home_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
                         <p class="h5 text-nowrap">{{ entry.game.home_team }}</p>
+                        <p class="h5 ms-auto me-2">{{ entry.game.home_goals }}</p>
                     </div>
                     <div class="d-flex flex-row">
                         <img src="{% if entry.game.away_team.logo %}{{ entry.game.away_team.logo.url }}{% endif %}" class="img-fluid me-3" style="object-fit: contain; height: 1.5rem; width: 1.5rem;">
                         <p class="h5 text-nowrap">{{ entry.game.away_team }}</p>
+                        <p class="h5 ms-auto me-2">{{ entry.game.away_goals }}</p>
                     </div>
                     <a href="{% url 'betting:detail' entry.game.id %}" class="stretched-link"></a>
                 </div>
