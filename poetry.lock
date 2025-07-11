@@ -2,21 +2,21 @@
 
 [[package]]
 name = "asgiref"
-version = "3.8.1"
+version = "3.9.1"
 description = "ASGI specs, helper code, and adapters"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main", "dev"]
 files = [
-    {file = "asgiref-3.8.1-py3-none-any.whl", hash = "sha256:3e1e3ecc849832fe52ccf2cb6686b7a55f82bb1d6aee72a58826471390335e47"},
-    {file = "asgiref-3.8.1.tar.gz", hash = "sha256:c343bd80a0bec947a9860adb4c432ffa7db769836c64238fc34bdc3fec84d590"},
+    {file = "asgiref-3.9.1-py3-none-any.whl", hash = "sha256:f3bba7092a48005b5f5bacd747d36ee4a5a61f4a269a6df590b43144355ebd2c"},
+    {file = "asgiref-3.9.1.tar.gz", hash = "sha256:a5ab6582236218e5ef1648f242fd9f10626cfd4de8dc377db215d5d5098e3142"},
 ]
 
 [package.dependencies]
-typing-extensions = {version = ">=4", markers = "python_version < \"3.11\""}
+typing_extensions = {version = ">=4", markers = "python_version < \"3.11\""}
 
 [package.extras]
-tests = ["mypy (>=0.800)", "pytest", "pytest-asyncio"]
+tests = ["mypy (>=1.14.0)", "pytest", "pytest-asyncio"]
 
 [[package]]
 name = "astroid"
@@ -64,14 +64,14 @@ profile = ["gprof2dot (>=2022.7.29)"]
 
 [[package]]
 name = "django"
-version = "5.2.2"
+version = "5.2.4"
 description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
 optional = false
 python-versions = ">=3.10"
 groups = ["main", "dev"]
 files = [
-    {file = "django-5.2.2-py3-none-any.whl", hash = "sha256:997ef2162d04ead6869551b22cde4e06da1f94cf595f4af3f3d3afeae1f3f6fe"},
-    {file = "django-5.2.2.tar.gz", hash = "sha256:85852e517f84435e9b13421379cd6c43ef5b48a9c8b391d29a26f7900967e952"},
+    {file = "django-5.2.4-py3-none-any.whl", hash = "sha256:60c35bd96201b10c6e7a78121bd0da51084733efa303cc19ead021ab179cef5e"},
+    {file = "django-5.2.4.tar.gz", hash = "sha256:a1228c384f8fa13eebc015196db7b3e08722c5058d4758d20cb287503a540d8f"},
 ]
 
 [package.dependencies]
@@ -247,14 +247,14 @@ with-django = ["Django (>=2.2)"]
 
 [[package]]
 name = "pylint-plugin-utils"
-version = "0.8.2"
+version = "0.9.0"
 description = "Utilities and helpers for writing Pylint plugins"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = "<4.0,>=3.9"
 groups = ["dev"]
 files = [
-    {file = "pylint_plugin_utils-0.8.2-py3-none-any.whl", hash = "sha256:ae11664737aa2effbf26f973a9e0b6779ab7106ec0adc5fe104b0907ca04e507"},
-    {file = "pylint_plugin_utils-0.8.2.tar.gz", hash = "sha256:d3cebf68a38ba3fba23a873809155562571386d4c1b03e5b4c4cc26c3eee93e4"},
+    {file = "pylint_plugin_utils-0.9.0-py3-none-any.whl", hash = "sha256:16e9b84e5326ba893a319a0323fcc8b4bcc9c71fc654fcabba0605596c673818"},
+    {file = "pylint_plugin_utils-0.9.0.tar.gz", hash = "sha256:5468d763878a18d5cc4db46eaffdda14313b043c962a263a7d78151b90132055"},
 ]
 
 [package.dependencies]
@@ -372,15 +372,15 @@ files = [
 
 [[package]]
 name = "typing-extensions"
-version = "4.14.0"
+version = "4.14.1"
 description = "Backported and Experimental Type Hints for Python 3.9+"
 optional = false
 python-versions = ">=3.9"
 groups = ["main", "dev"]
 markers = "python_version == \"3.10\""
 files = [
-    {file = "typing_extensions-4.14.0-py3-none-any.whl", hash = "sha256:a1514509136dd0b477638fc68d6a91497af5076466ad0fa6c338e44e359944af"},
-    {file = "typing_extensions-4.14.0.tar.gz", hash = "sha256:8676b788e32f02ab42d9e7c61324048ae4c6d844a399eebace3d4979d75ceef4"},
+    {file = "typing_extensions-4.14.1-py3-none-any.whl", hash = "sha256:d1e1e3b58374dc93031d6eda2420a48ea44a36c2b4766a4fdeb3710755731d76"},
+    {file = "typing_extensions-4.14.1.tar.gz", hash = "sha256:38b39f4aeeab64884ce9f74c94263ef78f3c22467c8724005483154c26648d36"},
 ]
 
 [[package]]
