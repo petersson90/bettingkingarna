@@ -121,22 +121,22 @@
                         <li class="nav-item col-12 col-lg-auto"><a class="nav-link py-2 px-0 px-lg-2" href="{% url 'betting:list-standings' %}">Bettingkingarna-tabell</a></li>
                         <!-- <li class="nav-item"><a class="nav-link" href="{% url 'betting:statistics' 2025 %}">Statistik</a></li> -->
                         <!-- <li class="nav-item"><a class="nav-link" href="{% url 'betting:competition-overview' 9 %}">EM 2024</a></li> -->
-                    </ul>
-                    {% endif %}
-                    <ul class="navbar-nav flex-row flex-wrap ms-md-auto">
-                    {% if perms.betting.add_team or perms.betting.add_game %}
                         <li class="nav-item py-2 py-lg-1 col-12 col-lg-auto">
                             <!-- <div class="vr d-none d-lg-flex h-100 mx-lg-2"></div> -->
                             <hr class="d-lg-none my-2">
                         </li>
+                    </ul>
+                    {% endif %}
+                    <ul class="navbar-nav flex-row flex-wrap ms-md-auto">
+                    {% if perms.betting.add_team or perms.betting.add_game %}
                         <li class="nav-item py-2 py-lg-1 col-12 col-lg-auto"><h6 class="offcanvas-title col-12 d-lg-none" id="offcanvasLabel">Admin</h6></li>
                         {% if perms.betting.add_team %}<li class="nav-item col-12 col-lg-auto"><a class="nav-link py-2 px-0 px-lg-2" href="{% url 'betting:list-team' %}">Visa/skapa lag</a></li>{% endif %}
                         {% if perms.betting.add_game %}<li class="nav-item col-12 col-lg-auto"><a class="nav-link py-2 px-0 px-lg-2" href="{% url 'betting:create-game' %}">Skapa match</a></li>{% endif %}
-                    {% endif %}
                         <li class="nav-item py-2 py-lg-1 col-12 col-lg-auto ms-lg-3">
                             <!-- <div class="vr d-none d-lg-flex h-100 mx-lg-2"></div> -->
                             <hr class="d-lg-none my-2">
                         </li>
+                    {% endif %}
                         <li class="nav-item col-6 col-lg-auto dropdown me-lg-1">
                             <a class="btn btn-outline-secondary dropdown-toggle" id="theme" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-circle-half theme-icon-active"></i>
