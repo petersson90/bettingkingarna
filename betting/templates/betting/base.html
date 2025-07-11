@@ -43,13 +43,13 @@
             setTheme(getPreferredTheme())
 
             const showActiveTheme = (theme, focus = false) => {
-                const themeSwitcher = document.querySelector('#bd-theme')
+                const themeSwitcher = document.querySelector('#theme')
 
                 if (!themeSwitcher) {
                     return
                 }
 
-                const themeSwitcherText = document.querySelector('#bd-theme-text')
+                const themeSwitcherText = document.querySelector('#theme-text')
                 const activeThemeIcon = document.querySelector('.theme-icon-active')
                 const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
                 const iconOfActiveBtn = btnToActive.querySelector('i').getAttribute('class').split(' ')[1]
@@ -98,32 +98,51 @@
 </head>
 
 <body>
-    <header class="border-3 border-bottom shadow-sm">
-        <nav class="navbar navbar-expand-lg border-1">
-            <div class="container">
-                <a class="navbar-brand" href="{% url 'betting:index' %}">Bettingkingarna</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
+    <header class="navbar navbar-expand-lg sticky-top border-3 border-bottom shadow-sm bg-dark-subtle">
+        <nav class="container flex-wrap flex-lg-nowrap border-1">
+            <a class="navbar-brand p-0 me-0 me-lg-3" href="{% url 'betting:index' %}">Bettingkingarna</a>
+            <div class="d-flex">
+                <button class="navbar-toggler d-flex d-lg-none order-3 p-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#bdNavbar" aria-controls="bdNavbar" aria-label="Toggle navigation">
+                    <i class="bi bi-list" aria-hidden="true"></i>
                 </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav">
-                        {% if request.user.is_authenticated %}
-                        <li class="nav-item"><a class="nav-link" href="{% url 'betting:index' %}">Matchbet</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'betting:table-bet-summary' 13 %}">Tabellbet</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'betting:list-standings' %}">Bettingkingarna-tabell</a></li>
+            </div>
+
+            <div class="offcanvas-lg offcanvas-end flex-grow-1 bg-dark-subtle" tabindex="-1" id="bdNavbar" aria-labelledby="bdNavbarOffcanvasLabel">
+                <div class="offcanvas-header px-4 pb-0">
+                    <h5 class="offcanvas-title" id="bdNavbarOffcanvasLabel">Bettingkingarna</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" data-bs-target="#bdNavbar"></button>
+                </div>
+                <div class="offcanvas-body p-4 pt-0 p-lg-0">
+                    <hr class="d-lg-none">
+                    {% if request.user.is_authenticated %}
+                    <ul class="navbar-nav flex-row flex-wrap">
+                        <li class="nav-item col-12 col-lg-auto"><a class="nav-link py-2 px-0 px-lg-2" href="{% url 'betting:index' %}">Matchbet</a></li>
+                        <li class="nav-item col-12 col-lg-auto"><a class="nav-link py-2 px-0 px-lg-2" href="{% url 'betting:table-bet-summary' 13 %}">Tabellbet</a></li>
+                        <li class="nav-item col-12 col-lg-auto"><a class="nav-link py-2 px-0 px-lg-2" href="{% url 'betting:list-standings' %}">Bettingkingarna-tabell</a></li>
                         <!-- <li class="nav-item"><a class="nav-link" href="{% url 'betting:statistics' 2025 %}">Statistik</a></li> -->
-                        {% if perms.betting.add_team %}<li class="nav-item"><a class="nav-link" href="{% url 'betting:list-team' %}">Visa/skapa lag</a></li>{% endif %}
-                        {% if perms.betting.add_game %}<li class="nav-item"><a class="nav-link" href="{% url 'betting:create-game' %}">Skapa match</a></li>{% endif %}
                         <!-- <li class="nav-item"><a class="nav-link" href="{% url 'betting:competition-overview' 9 %}">EM 2024</a></li> -->
-                        {% endif %}
                     </ul>
-                    <ul class="navbar-nav flex-row flex-wrap ms-lg-auto pb-2 pb-lg-0">
-                        <li class="nav-item dropdown me-lg-1">
-                            <a class="btn btn-outline-secondary dropdown-toggle" id="bd-theme" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% endif %}
+                    <ul class="navbar-nav flex-row flex-wrap ms-md-auto">
+                    {% if perms.betting.add_team or perms.betting.add_game %}
+                        <li class="nav-item py-2 py-lg-1 col-12 col-lg-auto">
+                            <!-- <div class="vr d-none d-lg-flex h-100 mx-lg-2"></div> -->
+                            <hr class="d-lg-none my-2">
+                        </li>
+                        <li class="nav-item py-2 py-lg-1 col-12 col-lg-auto"><h6 class="offcanvas-title col-12 d-lg-none" id="offcanvasLabel">Admin</h6></li>
+                        {% if perms.betting.add_team %}<li class="nav-item col-12 col-lg-auto"><a class="nav-link py-2 px-0 px-lg-2" href="{% url 'betting:list-team' %}">Visa/skapa lag</a></li>{% endif %}
+                        {% if perms.betting.add_game %}<li class="nav-item col-12 col-lg-auto"><a class="nav-link py-2 px-0 px-lg-2" href="{% url 'betting:create-game' %}">Skapa match</a></li>{% endif %}
+                    {% endif %}
+                        <li class="nav-item py-2 py-lg-1 col-12 col-lg-auto ms-lg-3">
+                            <!-- <div class="vr d-none d-lg-flex h-100 mx-lg-2"></div> -->
+                            <hr class="d-lg-none my-2">
+                        </li>
+                        <li class="nav-item col-6 col-lg-auto dropdown me-lg-1">
+                            <a class="btn btn-outline-secondary dropdown-toggle" id="theme" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-circle-half theme-icon-active"></i>
-                                <span class="d-lg-none ms-1" id="bd-theme-text">Byt tema</span>
+                                <span class="d-lg-none ms-1" id="theme-text">Byt tema</span>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme-text">
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="theme-text">
                                 <li>
                                     <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="false">
                                         <i class="bi bi-sun-fill opacity-50" aria-hidden="true"></i>
@@ -147,13 +166,14 @@
                                 </li>
                             </ul>
                         </li>
+                        <li class="nav-item col-6 col-lg-auto">
+                            {% if not request.user.is_authenticated %}
+                            <a class="btn btn-secondary" href="{% url 'betting:login' %}">Logga in</a>
+                            {% else %}
+                            <a class="btn btn-outline-secondary" href="{% url 'betting:logout' %}">Logga ut</a>
+                            {% endif %}
+                        </li>
                     </ul>
-                    
-                    {% if not request.user.is_authenticated %}
-                    <a class="btn btn-secondary" href="{% url 'betting:login' %}">Logga in</a>
-                    {% else %}
-                    <a class="btn btn-outline-secondary" href="{% url 'betting:logout' %}">Logga ut</a>
-                    {% endif %}
                 </div>
             </div>
         </nav>
