@@ -763,6 +763,8 @@ class calendar_subscription(ICalFeed):
     product_id = '-//Bettingkingarna//All games//SV'
     timezone = 'Europe/Stockholm'
     file_name = "feed.ics"
+    title = "Bettingkingarna"
+    description = "Alla inlagda matcher för Bettingkingarna"
 
     def items(self):
         ''' Return all games '''
