@@ -164,12 +164,25 @@ class Game(models.Model):
             user_top_scorer = 'N/A'
             user_most_assists = 'N/A'
 
-        
-        for row in leaderboard:
-            row['user'] = users.get(row['user'])
-            row['table_points'] = table_points.get(row['user'], {}).get('points', 0)
-            row['extra_bet'] = table_points.get(row['user'], {}).get('extra_bet', 0)
-            row['total_score'] = row.get('game_points', 0) + row.get('table_points', 0) + row.get('extra_bet', 0)
+        if leaderboard.exists():
+            for row in leaderboard:
+                row['user'] = users.get(row['user'])
+                row['table_points'] = table_points.get(row['user'], {}).get('points', 0)
+                row['extra_bet'] = table_points.get(row['user'], {}).get('extra_bet', 0)
+                row['total_score'] = row.get('game_points', 0) + row.get('table_points', 0) + row.get('extra_bet', 0)
+        else:
+            leaderboard = []
+            for user in users.values():
+                row = {
+                    'user': user,
+                    'game_points': 0,
+                    'goal_difference': 0,
+                    'goals_scored': 0,
+                    'table_points': 0,
+                    'extra_bet': 0,
+                    'total_score': 0
+                }
+                leaderboard.append(row)
 
         leaderboard = sorted(
             leaderboard,
@@ -180,8 +193,16 @@ class Game(models.Model):
             )
         )
 
-        for position, entry in enumerate(leaderboard, 1):
-            entry['position'] = position
+        # Check if there are ties in the leaderboard and assign the same position
+        for i in range(0, len(leaderboard)):
+            current = leaderboard[i]
+            previous = leaderboard[i - 1]
+            if (current['total_score'] == previous['total_score'] and
+                current['goal_difference'] == previous['goal_difference'] and
+                current['goals_scored'] == previous['goals_scored']):
+                current['position'] = previous.get('position', 1)
+            else:
+                current['position'] = i + 1
 
         return leaderboard
 
@@ -189,10 +210,28 @@ class Game(models.Model):
         """Return the deadlines for all users in this game."""
         leaderboard = self.get_leaderboard()
 
-        user_deadlines = {
-            entry['user']: self.start_time - timezone.timedelta(minutes=60 - math.ceil(entry['position'] / 2) * 10)
-            for entry in leaderboard
-        }
+        # Check unique positions in leaderboard
+        unique_positions = set(entry['position'] for entry in leaderboard)
+        if len(unique_positions) == 1 or self.start_time.year <= 2024:
+            user_deadlines = {
+                entry['user']: self.start_time
+                for entry in leaderboard
+            }
+        elif self.start_time.year == 2025:
+            user_deadlines = {
+                entry['user']: self.start_time - timezone.timedelta(minutes=60 - math.ceil(entry['position'] / 2) * 10)
+                for entry in leaderboard
+            }
+        elif self.start_time.year >= 2026:
+            user_deadlines = {
+                entry['user']: self.start_time - timezone.timedelta(minutes=60 - math.ceil(entry['position']) * 5)
+                for entry in leaderboard
+            }
+        else:
+            user_deadlines = {
+                entry['user']: self.start_time
+                for entry in leaderboard
+            }
 
         return user_deadlines
 
