@@ -64,14 +64,14 @@ profile = ["gprof2dot (>=2022.7.29)"]
 
 [[package]]
 name = "django"
-version = "5.2.11"
+version = "5.2.12"
 description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
 optional = false
 python-versions = ">=3.10"
 groups = ["main", "dev"]
 files = [
-    {file = "django-5.2.11-py3-none-any.whl", hash = "sha256:e7130df33ada9ab5e5e929bc19346a20fe383f5454acb2cc004508f242ee92c0"},
-    {file = "django-5.2.11.tar.gz", hash = "sha256:7f2d292ad8b9ee35e405d965fbbad293758b858c34bbf7f3df551aeeac6f02d3"},
+    {file = "django-5.2.12-py3-none-any.whl", hash = "sha256:4853482f395c3a151937f6991272540fcbf531464f254a347bf7c89f53c8cff7"},
+    {file = "django-5.2.12.tar.gz", hash = "sha256:6b809af7165c73eff5ce1c87fdae75d4da6520d6667f86401ecf55b681eb1eeb"},
 ]
 
 [package.dependencies]
@@ -399,4 +399,4 @@ markers = {dev = "sys_platform == \"win32\""}
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "742d3b7aeded0ad96be170d3ca87927757f02fb4044d66fdb3a03c6fb03842d4"
+content-hash = "cd909836047b73f9bc543a71f4ae4c0fda98765e9a5ee32ddbdf9c51e5d3e7e9"
