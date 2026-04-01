@@ -91,15 +91,23 @@ class TableBetForm(CustomModelForm):
 class TeamPositionBetForm(CustomModelForm):
     class Meta:
         model = StandingPrediction
-        fields = ['top_scorer', 'most_assists']
+        fields = ['top_scorer', 'most_assists', 'most_points', 'clean_sheets']
         labels = {
             'top_scorer': 'Vilken spelare tror du vinner skytteligan? (Ange två alternativ)',
             'most_assists': 'Vilken spelare tror du vinner assistligan? (Ange två alternativ)',
+            'most_points': 'Vilken spelare tror du vinner den interna poängligan? (Ange två alternativ)',
+            'clean_sheets': 'Hur många gånger håller Malmö nollan i Allsvenskan 2026?',
         }
 
     def __init__(self, *args, competition, teams=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.competition = competition
+        if self.competition.id == 13:
+            self.fields.pop('most_points', None)
+            self.fields.pop('clean_sheets', None)
+        elif self.competition.id == 17:
+            self.fields.pop('top_scorer', None)
+            self.fields.pop('most_assists', None)
 
         if teams is None:
             teams = competition.teams.all()

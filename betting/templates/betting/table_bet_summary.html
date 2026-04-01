@@ -58,6 +58,22 @@
         <td class="border-end">{{ row.most_assists }}</td>
         {% endfor %}
       </tr>
+      {% endif %} {% if most_points %}
+      <tr class="table-group-divider">
+        <td>Intern poängkung</td>
+        <td class="border-end">{{ most_points }}</td>
+        {% for row in standing_predictions %}
+        <td class="border-end">{{ row.most_points }}</td>
+        {% endfor %}
+      </tr>
+      {% endif %} {% if clean_sheets %}
+      <tr>
+        <td>Hållna nollor (MFF)</td>
+        <td class="border-end">{{ clean_sheets }}</td>
+        {% for row in standing_predictions %}
+        <td class="border-end">{{ row.clean_sheets }}</td>
+        {% endfor %}
+      </tr>
       {% endif %}
     </tbody>
   </table>

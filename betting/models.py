@@ -130,6 +130,8 @@ class Game(models.Model):
         competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
         top_scorer_list = standings.top_scorer
         most_assists_list = standings.most_assists
+        most_points_list = standings.most_points
+        clean_sheets = standings.clean_sheets
 
         try:
             user_standing_predictions = StandingPrediction.objects.select_related('user').prefetch_related('team_positions__team').filter(competition=competition)
@@ -139,6 +141,8 @@ class Game(models.Model):
                 teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in user_standing_prediction.team_positions.all()]
                 user_top_scorers = user_standing_prediction.top_scorer.split(', ')
                 user_most_assists = user_standing_prediction.most_assists.split(', ')
+                user_most_points = user_standing_prediction.most_points.split(', ')
+                user_clean_sheets = user_standing_prediction.clean_sheets
                     
                 bet_points = []
                 for position, team in teams:
@@ -148,12 +152,20 @@ class Game(models.Model):
 
                 extra_bet = 0
 
-                for user_top_scorer in user_top_scorers:
-                    if user_top_scorer in top_scorer_list:
-                        extra_bet += 6
-                for user_most_assist in user_most_assists:
-                    if user_most_assist in most_assists_list:
-                        extra_bet += 6
+                if user_top_scorers == []:
+                    for user_top_scorer in user_top_scorers:
+                        if user_top_scorer in top_scorer_list:
+                            extra_bet += 6
+                if user_most_assists == []:
+                    for user_most_assist in user_most_assists:
+                        if user_most_assist in most_assists_list:
+                            extra_bet += 16
+                if user_most_points == []:
+                    for user_most_point in user_most_points:
+                        if user_most_point in most_points_list:
+                            extra_bet += 6
+         
+                extra_bet += -abs(clean_sheets - user_clean_sheets) if user_clean_sheets and clean_sheets else 0
                 
                 table_points[user] = {
                     'points': user_table_points,
@@ -163,7 +175,8 @@ class Game(models.Model):
         except StandingPrediction.DoesNotExist:
             user_top_scorer = 'N/A'
             user_most_assists = 'N/A'
-
+            user_most_points = 'N/A'
+            user_clean_sheets = 'N/A'
         if leaderboard.exists():
             for row in leaderboard:
                 row['user'] = users.get(row['user'])
@@ -331,6 +344,8 @@ class StandingPrediction(models.Model):
     standing = models.CharField(max_length=100, blank=True)
     top_scorer = models.CharField(max_length=100, blank=True)
     most_assists = models.CharField(max_length=100, blank=True)
+    most_points = models.CharField(max_length=100, blank=True)
+    clean_sheets = models.PositiveIntegerField(null=True, blank=True)
     # Hidden fields to keep track of creation and update time
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -416,6 +431,8 @@ class Standing(models.Model):
     round = models.PositiveSmallIntegerField()
     top_scorer = models.CharField(max_length=100, blank=True)
     most_assists = models.CharField(max_length=100, blank=True)
+    most_points = models.CharField(max_length=100, blank=True)
+    clean_sheets = models.PositiveIntegerField(null=True, blank=True)
     # Hidden fields to keep track of creation and update time
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

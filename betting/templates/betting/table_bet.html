@@ -27,6 +27,10 @@
 <p>Skytteligavinnare: {{ top_scorer }}</p>
 {% endif %} {% if most_assists %}
 <p>Assistligavinnare: {{ most_assists }}</p>
+{% endif %} {% if most_points %}
+<p>Intern poängligavinnare: {{ most_points }}</p>
+{% endif %} {% if clean_sheets %}
+<p>Hållna nollor: {{ clean_sheets }}</p>
 {% endif %} {% if form %}
 <h1>Skapa tabellbet</h1>
 <form method="POST" action="">

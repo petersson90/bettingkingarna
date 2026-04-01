@@ -324,6 +324,8 @@ def standings_list(request):
                 teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in user_standing_prediction.team_positions.all()]
                 user_top_scorer = user_standing_prediction.top_scorer
                 user_most_assists = user_standing_prediction.most_assists
+                user_most_points = user_standing_prediction.most_points
+                user_clean_sheets = user_standing_prediction.clean_sheets
                 bet_points = []
                 for position, team in teams:
                     diff = position - competition_standings.index(team) - 1
@@ -332,6 +334,8 @@ def standings_list(request):
             except StandingPrediction.DoesNotExist:
                 user_top_scorer = 'N/A'
                 user_most_assists = 'N/A'
+                user_most_points = 'N/A'
+                user_clean_sheets = 'N/A'
 
         result.append({
             'user': user,
@@ -339,6 +343,8 @@ def standings_list(request):
             'table_points': user_table_points,
             'top_scorer': user_top_scorer,
             'most_assists': user_most_assists,
+            'most_points': user_most_points,
+            'clean_sheets': user_clean_sheets,
             'goal_diff': goal_diff,
             'goals_scored_diff': goals_scored_diff,
         })
@@ -346,17 +352,24 @@ def standings_list(request):
     max_total = 0
     top_scorer_list = []
     most_assists_list = []
+    most_points_list = []
+    clean_sheets = []
     if selected_year == '2023':
         top_scorer_list = TOP_SCORER_2023
         most_assists_list = MOST_ASSISTS_2023
-    elif selected_year in ('2024', '2025', '2026'):
+    elif selected_year in ('2024', '2025'):
         top_scorer_list = standings.top_scorer
         most_assists_list = standings.most_assists
+    elif selected_year in ('2026'):
+        most_points_list = standings.most_points
+        clean_sheets = standings.clean_sheets
 
     for row in result:
         row['extra_bet'] = 0
         top_scorers = row['top_scorer'].split(', ')
         top_assists = row['most_assists'].split(', ')
+        most_points = row['most_points'].split(', ')
+        user_clean_sheets = row['clean_sheets']
 
         for top_scorer in top_scorers:
             if top_scorer in top_scorer_list:
@@ -364,6 +377,11 @@ def standings_list(request):
         for most_assist in top_assists:
             if most_assist in most_assists_list:
                 row['extra_bet'] += 6
+        for most_point in most_points:
+            if most_point in most_points_list:
+                row['extra_bet'] += 6
+        
+        row['extra_bet'] += -abs(clean_sheets - user_clean_sheets) if clean_sheets and user_clean_sheets != 'N/A' else 0
 
         total_points = row['points'] + row['table_points'] + row['extra_bet']
         row['total_points'] = total_points
@@ -803,6 +821,8 @@ def table_bet(request, competition_id):
     team_list = []
     top_scorer = None
     most_assists = None
+    most_points = None
+    clean_sheets = None
     bet_positions = None
     if competition_id == 1:
         bet_positions = [1, 2, 3, 14, 15, 16]
@@ -811,13 +831,15 @@ def table_bet(request, competition_id):
     elif competition_id == 13:
         team_list = [Team.objects.get(name='Mjällby AIF')]
     elif competition_id == 17:
-        team_list = [Team.objects.get(name='Mjällby AIF')]
+        team_list = [Team.objects.get(name='IFK Göteborg')]
 
     try:
         user_bet = StandingPrediction.objects.get(user=request.user, competition=competition)
         teams = StandingPredictionTeam.objects.filter(standing_prediction=user_bet).order_by('position')
         top_scorer = user_bet.top_scorer
         most_assists = user_bet.most_assists
+        most_points = user_bet.most_points
+        clean_sheets = user_bet.clean_sheets
 
     except StandingPrediction.DoesNotExist:
         user_bet = StandingPrediction(user=request.user, competition=competition)
@@ -869,7 +891,9 @@ def table_bet(request, competition_id):
         'competition': competition,
         'teams': teams,
         'top_scorer': top_scorer,
-        'most_assists': most_assists
+        'most_assists': most_assists,
+        'most_points': most_points,
+        'clean_sheets': clean_sheets
     }
 
     return render(request, 'betting/table_bet.html', context)
@@ -1000,6 +1024,8 @@ def table_bet_summary(request, competition_id):
         sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
         top_scorer = standings.top_scorer
         most_assists = standings.most_assists
+        most_points = standings.most_points
+        clean_sheets = standings.clean_sheets
     
         current_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
 
@@ -1008,6 +1034,8 @@ def table_bet_summary(request, competition_id):
             teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in standing_prediction.team_positions.all()]
             user_top_scorer = standing_prediction.top_scorer
             user_most_assists = standing_prediction.most_assists
+            user_most_points = standing_prediction.most_points
+            user_clean_sheets = standing_prediction.clean_sheets
 
             bet_points = []
             for position, team in teams:
@@ -1021,7 +1049,9 @@ def table_bet_summary(request, competition_id):
                 'bet_points': bet_points,
                 'points': points,
                 'top_scorer': user_top_scorer,
-                'most_assists': user_most_assists
+                'most_assists': user_most_assists,
+                'most_points': user_most_points,
+                'clean_sheets': user_clean_sheets
             })
 
         # Hide all standing predictions if the competition has not started yet
@@ -1046,6 +1076,8 @@ def table_bet_summary(request, competition_id):
         current_standings = []
         top_scorer = ''
         most_assists = ''
+        most_points = ''
+        clean_sheets = ''
         standing_predictions = []
 
     team_positions = TeamPosition.objects.filter(standing__competition=competition).values(
@@ -1067,6 +1099,8 @@ def table_bet_summary(request, competition_id):
         'teams': current_standings,
         'top_scorer': top_scorer,
         'most_assists': most_assists,
+        'most_points': most_points,
+        'clean_sheets': clean_sheets,
         'TOP_BOTTOM': TOP_BOTTOM,
         'POINTS_CORRECT': POINTS_CORRECT,
         'POINTS_ALMOST': POINTS_ALMOST,
