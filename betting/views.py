@@ -15,7 +15,7 @@ from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPr
 
 DEADLINE_2024 = timezone.make_aware(timezone.datetime(2024, 4, 7, 11))
 DEADLINE_2025 = timezone.make_aware(timezone.datetime(2025, 3, 29, 15))
-DEADLINE_2026 = timezone.make_aware(timezone.datetime(2026, 4, 4, 15))
+DEADLINE_2026 = timezone.make_aware(timezone.datetime(2026, 4, 5, 16, 30))
 ALLSVENSKAN_2023 = '1,18,23,3,5,4,6,13,11,15,7,29,22,30,8,24'
 TOP_SCORER_2023 = 'Isaac Kiese Thelin'
 MOST_ASSISTS_2023 = 'Mikkel Rygaard Jensen'
