@@ -145,9 +145,9 @@ class Game(models.Model):
                 user_clean_sheets = user_standing_prediction.clean_sheets
                     
                 bet_points = []
-                for position, team in teams:
-                    diff = position - competition_standings.index(team) - 1
-                    bet_points.append(-abs(diff))
+                # for position, team in teams:
+                #     diff = position - competition_standings.index(team) - 1
+                #     bet_points.append(-abs(diff))
                 user_table_points = sum(bet_points)
 
                 extra_bet = 0
@@ -160,12 +160,12 @@ class Game(models.Model):
                     for user_most_assist in user_most_assists:
                         if user_most_assist in most_assists_list:
                             extra_bet += 16
-                if user_most_points == []:
-                    for user_most_point in user_most_points:
-                        if user_most_point in most_points_list:
-                            extra_bet += 6
+                # if user_most_points == []:
+                #     for user_most_point in user_most_points:
+                #         if user_most_point in most_points_list:
+                #             extra_bet += 6
          
-                extra_bet += -abs(clean_sheets - user_clean_sheets) if user_clean_sheets and clean_sheets else 0
+                # extra_bet += -abs(clean_sheets - user_clean_sheets) if user_clean_sheets and clean_sheets else 0
                 
                 table_points[user] = {
                     'points': user_table_points,

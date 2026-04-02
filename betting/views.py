@@ -327,9 +327,9 @@ def standings_list(request):
                 user_most_points = user_standing_prediction.most_points
                 user_clean_sheets = user_standing_prediction.clean_sheets
                 bet_points = []
-                for position, team in teams:
-                    diff = position - competition_standings.index(team) - 1
-                    bet_points.append(-abs(diff))
+                # for position, team in teams:
+                #     diff = position - competition_standings.index(team) - 1
+                #     bet_points.append(-abs(diff))
                 user_table_points = sum(bet_points)
             except StandingPrediction.DoesNotExist:
                 user_top_scorer = 'N/A'
@@ -377,11 +377,11 @@ def standings_list(request):
         for most_assist in top_assists:
             if most_assist in most_assists_list:
                 row['extra_bet'] += 6
-        for most_point in most_points:
-            if most_point in most_points_list:
-                row['extra_bet'] += 6
+        # for most_point in most_points:
+        #     if most_point in most_points_list:
+        #         row['extra_bet'] += 6
         
-        row['extra_bet'] += -abs(clean_sheets - user_clean_sheets) if clean_sheets and user_clean_sheets != 'N/A' else 0
+        # row['extra_bet'] += -abs(clean_sheets - user_clean_sheets) if clean_sheets and user_clean_sheets != 'N/A' else 0
 
         total_points = row['points'] + row['table_points'] + row['extra_bet']
         row['total_points'] = total_points
