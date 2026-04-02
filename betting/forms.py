@@ -1,5 +1,6 @@
 from django.forms import ModelForm, ChoiceField, Select, ModelChoiceField, DateTimeInput, IntegerField
 from .models import Team, Game, Bet, StandingPrediction, StandingPredictionTeam
+from django.utils.safestring import mark_safe
 
 class CustomModelForm(ModelForm):
     def __init__(self, *args, **kwargs):
@@ -95,7 +96,7 @@ class TeamPositionBetForm(CustomModelForm):
         labels = {
             'top_scorer': 'Vilken spelare tror du vinner skytteligan? (Ange två alternativ)',
             'most_assists': 'Vilken spelare tror du vinner assistligan? (Ange två alternativ)',
-            'most_points': 'Vilken spelare tror du vinner den interna poängligan? (Ange två alternativ)',
+            'most_points': 'Vilken spelare tror du vinner den interna poängligan? (Ange två alternativ, första alternativet är ditt förstaval)',
             'clean_sheets': 'Hur många gånger håller Malmö nollan i Allsvenskan 2026?',
         }
 
@@ -116,7 +117,8 @@ class TeamPositionBetForm(CustomModelForm):
             
         for team in teams:
             self.fields[f'position_team_{team.id}'] = IntegerField(
-                label=f'{team.name}',
+                label=mark_safe(f'Vilken placering tror du att {team.name} slutar på i {competition}?</p><p>'),
+                label_suffix='',
                 required=True,
                 min_value=1,
                 max_value=competition.teams.count(),
