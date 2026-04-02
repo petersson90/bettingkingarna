@@ -66,7 +66,7 @@
         <td class="border-end">{{ row.most_points }}</td>
         {% endfor %}
       </tr>
-      {% endif %} {% if clean_sheets %}
+      {% endif %} {% if clean_sheets or clean_sheets == 0 %}
       <tr>
         <td>Hållna nollor (MFF)</td>
         <td class="border-end">{{ clean_sheets }}</td>

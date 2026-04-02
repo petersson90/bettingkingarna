@@ -29,12 +29,12 @@
 <p>Assistligavinnare: {{ most_assists }}</p>
 {% endif %} {% if most_points %}
 <p>Intern poängligavinnare: {{ most_points }}</p>
-{% endif %} {% if clean_sheets %}
-<p>Hållna nollor: {{ clean_sheets }}</p>
+{% endif %} {% if clean_sheets or clean_sheets == 0 %}
+<p>Hållna nollor (MFF): {{ clean_sheets }}</p>
 {% endif %} {% if form %}
 <h1>Skapa tabellbet</h1>
 <form method="POST" action="">
-  {% csrf_token %} {{ form.as_div }}
+  {% csrf_token %} {{ form.as_p }}
   <button type="submit" class="btn btn-primary mt-2">Spara</button>
 </form>
 {% endif %} {% endblock content %}
