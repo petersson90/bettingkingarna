@@ -53,10 +53,10 @@ class StandingPredictionForm(CustomModelForm):
 class TableBetForm(CustomModelForm):
     class Meta:
         model = StandingPrediction
-        fields = ['top_scorer', 'most_assists']
+        fields = ['top_scorer']
         labels = {
-            'top_scorer': 'Vilken spelare tror du vinner skytteligan? (Ange två alternativ)',
-            'most_assists': 'Vilken spelare tror du vinner assistligan? (Ange två alternativ)',
+            'top_scorer': 'Vilken spelare tror du vinner skytteligan? (Ange två alternativ, första alternativet är ditt förstaval)',
+            # 'most_assists': 'Vilken spelare tror du vinner assistligan? (Ange två alternativ, första alternativet är ditt förstaval)',
         }
 
     def __init__(self, *args, competition, bet_positions=None, **kwargs):
