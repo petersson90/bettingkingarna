@@ -80,42 +80,64 @@ class Game(models.Model):
 
     def get_leaderboard(self):
         """Return the leaderboard at the start of this game."""
-        leaderboard = (
-            Bet.objects.filter(
-                game__start_time__year=self.start_time.year,
-                game__start_time__lt=self.start_time
-            )
-            .values('user')
-            .annotate(
-                game_points=Sum('points'),
-                goal_difference=Sum(
-                    ExpressionWrapper(
-                        Case(
-                            When(game__home_team__id = 1, then=(F('game__away_goals') - F('game__home_goals')) - (F('away_goals') - F('home_goals'))),
-                            default=(F('game__home_goals') - F('game__away_goals')) - (F('home_goals') - F('away_goals'))
-                        ),
-                        output_field=IntegerField()
+        if self.competition.excluded:
+            leaderboard = (
+                Bet.objects.filter(
+                    game__competition=self.competition,
+                    game__start_time__lt=self.start_time
+                )
+                .values('user')
+                .annotate(
+                    game_points=Sum('points'),
+                    goal_difference=Sum(0),
+                    goals_scored=Sum(F('home_goals') - F('game__home_goals') + F('away_goals') - F('game__away_goals')),
+                    position=Window(
+                        expression=Rank(),
+                        order_by=[
+                            F('game_points').desc(),
+                            Abs(F('goal_difference')).asc(),
+                            Abs(F('goals_scored')).asc()
+                        ]
                     )
-                ),
-                goals_scored=Sum(
-                    ExpressionWrapper(
-                        Case(
-                            When(game__home_team__id = 1, then=F('home_goals') - F('game__home_goals')),
-                            default=F('away_goals') - F('game__away_goals')
-                        ),
-                        output_field=IntegerField()
-                    )
-                ),
-                position=Window(
-                    expression=Rank(),
-                    order_by=[
-                        F('game_points').desc(),
-                        Abs(F('goal_difference')).asc(),
-                        Abs(F('goals_scored')).asc()
-                    ]
                 )
             )
-        )
+        else:
+            leaderboard = (
+                Bet.objects.filter(
+                    game__start_time__year=self.start_time.year,
+                    game__start_time__lt=self.start_time
+                )
+                .values('user')
+                .annotate(
+                    game_points=Sum('points'),
+                    goal_difference=Sum(
+                        ExpressionWrapper(
+                            Case(
+                                When(game__home_team__id = 1, then=(F('game__away_goals') - F('game__home_goals')) - (F('away_goals') - F('home_goals'))),
+                                default=(F('game__home_goals') - F('game__away_goals')) - (F('home_goals') - F('away_goals'))
+                            ),
+                            output_field=IntegerField()
+                        )
+                    ),
+                    goals_scored=Sum(
+                        ExpressionWrapper(
+                            Case(
+                                When(game__home_team__id = 1, then=F('home_goals') - F('game__home_goals')),
+                                default=F('away_goals') - F('game__away_goals')
+                            ),
+                            output_field=IntegerField()
+                        )
+                    ),
+                    position=Window(
+                        expression=Rank(),
+                        order_by=[
+                            F('game_points').desc(),
+                            Abs(F('goal_difference')).asc(),
+                            Abs(F('goals_scored')).asc()
+                        ]
+                    )
+                )
+            )
 
         User = get_user_model()
         users = {user.id: user for user in User.objects.all()}
@@ -235,7 +257,7 @@ class Game(models.Model):
                 entry['user']: self.start_time - timezone.timedelta(minutes=60 - math.ceil(entry['position'] / 2) * 10)
                 for entry in leaderboard
             }
-        elif self.start_time.year >= 2026:
+        elif self.start_time.year >= 2026 and not self.competition.excluded:
             user_deadlines = {
                 entry['user']: self.start_time - timezone.timedelta(minutes=60 - math.ceil(entry['position']) * 5)
                 for entry in leaderboard

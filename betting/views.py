@@ -16,6 +16,7 @@ from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPr
 DEADLINE_2024 = timezone.make_aware(timezone.datetime(2024, 4, 7, 11))
 DEADLINE_2025 = timezone.make_aware(timezone.datetime(2025, 3, 29, 15))
 DEADLINE_2026 = timezone.make_aware(timezone.datetime(2026, 4, 5, 16, 30))
+DEADLINE_VM_2026 = timezone.make_aware(timezone.datetime(2026, 6, 11, 21, 00))
 ALLSVENSKAN_2023 = '1,18,23,3,5,4,6,13,11,15,7,29,22,30,8,24'
 TOP_SCORER_2023 = 'Isaac Kiese Thelin'
 MOST_ASSISTS_2023 = 'Mikkel Rygaard Jensen'
@@ -832,6 +833,8 @@ def table_bet(request, competition_id):
         team_list = [Team.objects.get(name='Mjällby AIF')]
     elif competition_id == 17:
         team_list = [Team.objects.get(name='IFK Göteborg')]
+    elif competition_id == 18:
+        bet_positions = [1]
 
     try:
         user_bet = StandingPrediction.objects.get(user=request.user, competition=competition)
@@ -847,7 +850,8 @@ def table_bet(request, competition_id):
     if request.method == 'POST':
         if (competition_id == 8 and timezone.now() >= DEADLINE_2024) or \
            (competition_id == 13 and timezone.now() >= DEADLINE_2025) or \
-           (competition_id == 17 and timezone.now() >= DEADLINE_2026):
+           (competition_id == 17 and timezone.now() >= DEADLINE_2026) or \
+           (competition_id == 18 and timezone.now() >= DEADLINE_VM_2026):
             messages.error(request, 'Deadline har passerat och inga nya eller ändrade bet kan läggas.')
             return redirect('betting:table-bet', competition_id)
 
@@ -883,7 +887,8 @@ def table_bet(request, competition_id):
 
     if (competition_id == 8 and timezone.now() >= DEADLINE_2024) or \
        (competition_id == 13 and timezone.now() >= DEADLINE_2025) or \
-       (competition_id == 17 and timezone.now() >= DEADLINE_2026):
+       (competition_id == 17 and timezone.now() >= DEADLINE_2026) or \
+       (competition_id == 18 and timezone.now() >= DEADLINE_VM_2026):
         form = None
 
     context = {
@@ -1120,91 +1125,109 @@ def competition_overview(request, competition_id):
         bet__game__competition=competition
     ).distinct()
 
-    user_bets_data = Bet.objects.filter(
-        user__in=users_with_bets,
-        game__start_time__lt=current_datetime,
-        game__competition=competition,
-        game__home_goals__isnull=False
-    ).select_related('user', 'game', 'game__home_team', 'game__away_team').values(
-        'user__id',
-    ).annotate(
-        points=Sum('points'),
-        goal_diff=Sum(
-            Case(
-                When(game__home_team__id=1,
-                     then=F('home_goals') - F('away_goals') - (F('game__home_goals') - F('game__away_goals'))),
-                default=F('away_goals') - F('home_goals') - (F('game__away_goals') - F('game__home_goals')),
-                output_field=IntegerField(),
-            )
-        ),
-        goals_scored_diff=Sum(
-            Case(
-                When(game__home_team__id=1,
-                     then=F('home_goals') - F('game__home_goals')),
-                default=F('away_goals') - F('game__away_goals'),
-                output_field=IntegerField(),
-            )
-        )
-    ).annotate(
-        rank=Window(
-            expression=Rank(),
-            order_by=[
-                F('points').desc(),
-                Abs(F('goal_diff')).asc(),
-                Abs(F('goals_scored_diff')).asc(),
-            ]
-        )
-    )
+    # current_standing = Bet.objects.filter(
+    #     user__in=users_with_bets,
+    #     game__start_time__lt=current_datetime,
+    #     game__competition=competition,
+    #     game__home_goals__isnull=False
+    # ).select_related('user', 'game', 'game__home_team', 'game__away_team').values(
+    #     'user__id',
+    # ).annotate(
+    #     points=Sum('points'),
+    #     goal_diff=Sum(
+    #         Case(
+    #             When(game__home_team__id=1,
+    #                  then=F('home_goals') - F('away_goals') - (F('game__home_goals') - F('game__away_goals'))),
+    #             default=F('away_goals') - F('home_goals') - (F('game__away_goals') - F('game__home_goals')),
+    #             output_field=IntegerField(),
+    #         )
+    #     ),
+    #     goals_scored_diff=Sum(
+    #         Case(
+    #             When(game__home_team__id=1,
+    #                  then=F('home_goals') - F('game__home_goals')),
+    #             default=F('away_goals') - F('game__away_goals'),
+    #             output_field=IntegerField(),
+    #         )
+    #     )
+    # ).annotate(
+    #     rank=Window(
+    #         expression=Rank(),
+    #         order_by=[
+    #             F('points').desc(),
+    #             Abs(F('goal_diff')).asc(),
+    #             Abs(F('goals_scored_diff')).asc(),
+    #         ]
+    #     )
+    # )
+
+    # previous_standing = Bet.objects.filter(
+    #     user__in=users_with_bets,
+    #     game__start_time__lt=current_datetime,
+    #     game__competition=competition,
+    #     game__home_goals__isnull=False
+    # ).exclude(game=upcoming_game).select_related('user', 'game', 'game__home_team', 'game__away_team').values(
+    #     'user__id',
+    # ).annotate(
+    #     points=Sum('points'),
+    #     goal_diff=Sum(
+    #         Case(
+    #             When(game__home_team__id=1,
+    #                  then=F('home_goals') - F('away_goals') - (F('game__home_goals') - F('game__away_goals'))),
+    #             default=F('away_goals') - F('home_goals') - (F('game__away_goals') - F('game__home_goals')),
+    #             output_field=IntegerField(),
+    #         )
+    #     ),
+    #     goals_scored_diff=Sum(
+    #         Case(
+    #             When(game__home_team__id=1,
+    #                  then=F('home_goals') - F('game__home_goals')),
+    #             default=F('away_goals') - F('game__away_goals'),
+    #             output_field=IntegerField(),
+    #         )
+    #     )
+    # ).annotate(
+    #     rank=Window(
+    #         expression=Rank(),
+    #         order_by=[
+    #             F('points').desc(),
+    #             Abs(F('goal_diff')).asc(),
+    #             Abs(F('goals_scored_diff')).asc(),
+    #         ]
+    #     )
+    # )
+
+    upcoming_game = Game.objects.filter(
+        start_time__gt=current_datetime,
+        competition=competition
+    ).order_by('start_time').first()
 
     latest_game = Game.objects.filter(
         start_time__lt=current_datetime,
         competition=competition
     ).order_by('start_time').last()
 
-    user_prev_rank = Bet.objects.filter(
-        user__in=users_with_bets,
-        game__start_time__lt=current_datetime,
-        game__competition=competition,
-        game__home_goals__isnull=False
-    ).exclude(game=latest_game).select_related('user', 'game', 'game__home_team', 'game__away_team').values(
-        'user__id',
-    ).annotate(
-        points=Sum('points'),
-        goal_diff=Sum(
-            Case(
-                When(game__home_team__id=1,
-                     then=F('home_goals') - F('away_goals') - (F('game__home_goals') - F('game__away_goals'))),
-                default=F('away_goals') - F('home_goals') - (F('game__away_goals') - F('game__home_goals')),
-                output_field=IntegerField(),
-            )
-        ),
-        goals_scored_diff=Sum(
-            Case(
-                When(game__home_team__id=1,
-                     then=F('home_goals') - F('game__home_goals')),
-                default=F('away_goals') - F('game__away_goals'),
-                output_field=IntegerField(),
-            )
-        )
-    ).annotate(
-        rank=Window(
-            expression=Rank(),
-            order_by=[
-                F('points').desc(),
-                Abs(F('goal_diff')).asc(),
-                Abs(F('goals_scored_diff')).asc(),
-            ]
-        )
-    )
+    current_standing_game = upcoming_game if upcoming_game else latest_game
+
+    current_standing = current_standing_game.get_leaderboard()
+
+    second_latest_game = Game.objects.filter(
+        start_time__lt=current_standing_game.start_time,
+        competition=competition
+    ).order_by('start_time').last()
+
+    previous_standing = second_latest_game.get_leaderboard() if second_latest_game else None
 
     user_data_dict = {}
-    for data in user_bets_data:
-        user_id = data['user__id']
-        user_data_dict[user_id] = {k: v for k, v in data.items() if k not in {'user__id'}}
+    for data in current_standing:
+        user_id = data['user'].id
+        user_data_dict[user_id] = {k: v for k, v in data.items() if k not in {'user'}}
 
-    for data in user_prev_rank:
-        user_id = data['user__id']
-        user_data_dict[user_id]['prev_rank'] = data['rank']
+    if previous_standing:
+        for data in previous_standing:
+            user_id = data['user'].id
+            user_data_dict[user_id] = user_data_dict.get(user_id, {})
+            user_data_dict[user_id]['prev_position'] = data['position']
 
     result = []
     for user in users_with_bets:
@@ -1212,7 +1235,7 @@ def competition_overview(request, competition_id):
         user_data['user'] = user
         result.append(user_data)
 
-    result.sort(key=lambda x: x['rank'])
+    result.sort(key=lambda x: x['position'])
 
     upcoming_games = Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__gte=current_datetime, competition=competition).prefetch_related('bets').order_by('start_time')
 

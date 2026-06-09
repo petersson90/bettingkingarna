@@ -34,39 +34,33 @@
     {% endif %}
 </section>
 
+{% if result %}
 <section class="standings-table">
     <h2 class="border-top border-5 border-dark mt-3 pt-3">Matchbet {{ competition.name }} {{ competition.season }}</h2>
-    {% if result %}
     <div class="table-responsive">
         <table class="table table-striped table-hover">
             <thead>
             <tr>
                 <th scope="col">#</th>
                 <th scope="col">Namn</th>
-                <th scope="col" class="text-end">
-                <abbr class="d-block d-sm-none" title="Poäng">P</abbr
-                ><span class="d-none d-sm-block">Poäng</span>
-                </th>
-                <th scope="col" class="text-end">+/-</th>
+                <th scope="col" class="text-end"><abbr class="d-block d-sm-none" title="Poäng">P</abbr><span class="d-none d-sm-block">Poäng</span></th>
+                {% if competition.id != 18 %}<th scope="col" class="text-end">+/-</th>{% endif %}
                 <th scope="col" class="text-end"><abbr title="Gjorda mål">GM</abbr></th>
             </tr>
             </thead>
             <tbody class="table-group-divider">
             {% for row in result %}
             <tr>
-                <td><i class="bi me-1 {% if row.rank < row.prev_rank %}bi-caret-up text-success{% elif row.rank > row.prev_rank %}bi-caret-down text-danger{% else %}bi-dash{% endif %}"></i>{{ row.rank }}</td>
+                <td><i class="bi me-1 {% if row.position < row.prev_position %}bi-caret-up text-success{% elif row.position > row.prev_position %}bi-caret-down text-danger{% else %}bi-dash{% endif %}"></i>{{ row.position }}</td>
                 <td class="text-nowrap">{{ row.user }}</td>
-                <td class="text-end"><strong>{{ row.points }}</strong></td>
-                <td class="text-end">{{ row.goal_diff }}</td>
-                <td class="text-end">{{ row.goals_scored_diff }}</td>
+                <td class="text-end"><strong>{{ row.game_points }}</strong></td>
+                {% if competition.id != 18 %}<td class="text-end">{{ row.goal_difference }}</td>{% endif %}
+                <td class="text-end">{{ row.goals_scored }}</td>
             </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
-    {% else %}
-        <p>Inga matcher har spelats.</p>
-    {% endif %}
 </section>
 
 <figure>
@@ -105,6 +99,7 @@
             });
         });
 </script>
+{% endif %}
 
 <section class="game-list">
     <h2 class="border-top border-5 border-dark mt-3 pt-3">Spelade matcher</h2>
