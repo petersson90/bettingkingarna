@@ -1237,18 +1237,34 @@ def competition_overview(request, competition_id):
 
     result.sort(key=lambda x: x['position'])
 
-    upcoming_games = Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__gte=current_datetime, competition=competition).prefetch_related('bets').order_by('start_time')
+    all_games = Game.objects.select_related('competition', 'home_team', 'away_team').filter(competition=competition).prefetch_related('bets').order_by('start_time')
+    if request.user.is_authenticated:
+        user_bets = set(Bet.objects.filter(user=request.user, game__in=all_games).values_list('game_id', flat=True))
+    else:
+        user_bets = set()
 
-    upcoming_games_with_bets = {}
-    for game in upcoming_games:
-        user_has_bet = Bet.objects.filter(user=request.user, game=game).exists()
-        upcoming_games_with_bets[game] = {'user_has_bet': user_has_bet}
+    past_games, current_games, upcoming_games = [], [], []
+
+    for game in all_games:
+        game_info = {
+            'game': game,
+            'user_has_bet': game.id in user_bets
+        }
+
+        if game.start_time.date() == current_datetime.date() or current_datetime - timezone.timedelta(hours=12) <= game.start_time <= current_datetime + timezone.timedelta(hours=24):
+            current_games.append(game_info)
+        elif game.start_time < current_datetime:
+            past_games.insert(0, game_info)
+        else:
+            upcoming_games.append(game_info)
+
 
     context = {
         'competition': competition,
         'result': result,
-        'past_games': Game.objects.select_related('competition', 'home_team', 'away_team').filter(start_time__lt=current_datetime, competition=competition).order_by('-start_time'),
-        'upcoming_games': upcoming_games_with_bets
+        'past_games': past_games,
+        'current_games': current_games,
+        'upcoming_games': upcoming_games
     }
     return render(request, 'betting/competition_overview.html', context)
 
