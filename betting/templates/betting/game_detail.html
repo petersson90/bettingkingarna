@@ -129,12 +129,20 @@
             </button>
         </h2>
         <div id="messengerBot" class="accordion-collapse collapse" data-bs-parent="#accordionGameDetails">
-            <div class="accordion-body">
-                <ul class="list-unstyled mb-0">
-                {% for bet, users in bet_summary %}
-                    <li>{{ bet }}: {% for user in users %}{{ user }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
-                {% endfor %}
-                </ul>
+            <div class="accordion-body d-flex align-items-center">
+                <div id="messengerBotContent">
+                    <strong>{{ game }}</strong>
+                    <ul class="list-unstyled mb-0">
+                    {% for bet, users in bet_summary %}
+                        <li>{{ bet }}: {% for user in users %}{{ user }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+                <div class="d-flex ms-auto">
+                    <button type="button" id="messengerBotCopyButton" class="btn btn-outline text-secondary border-secondary" onclick="const buttonHTML = document.getElementById('messengerBotCopyButton').innerHTML; const textContent = document.getElementById('messengerBotContent').innerText; document.getElementById('messengerBotCopyButton').innerHTML = '<i class=&quot;bi bi-check-lg text-success&quot;></i>'; navigator.clipboard.writeText(textContent); setTimeout(() => { document.getElementById('messengerBotCopyButton').innerHTML = buttonHTML; }, 2000);">
+                        <i class="bi bi-copy"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
