@@ -1311,3 +1311,33 @@ def chart_data_view(request, competition_id):
     chart_data['datasets'] = list(user_points.values())
 
     return JsonResponse(chart_data)
+
+
+def world_cup_bet(request, competition_id):
+    ''' Show bet for current user for a specific competition standings '''
+    competition = get_object_or_404(Competition, pk=competition_id)
+
+    users_with_bets = CustomUser.objects.filter(
+        standingprediction__competition=competition
+    ).distinct().order_by('first_name')
+
+    result = {}
+
+    for user in users_with_bets:
+        user_bet = StandingPrediction.objects.get(user=user, competition=competition)
+        teams = StandingPredictionTeam.objects.filter(standing_prediction=user_bet).prefetch_related('team').order_by('position')
+        for team in teams:
+            winner = team.team.name
+        top_scorer = user_bet.top_scorer
+        result[user.id] = {
+            'user': user,
+            'winner': winner,
+            'top_scorer': top_scorer
+        }
+
+    context = {
+        'competition': competition,
+        'result': result,
+    }
+
+    return render(request, 'betting/world_cup_bet.html', context)
