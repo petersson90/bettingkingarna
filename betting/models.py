@@ -105,7 +105,8 @@ class Game(models.Model):
             leaderboard = (
                 Bet.objects.filter(
                     game__start_time__year=self.start_time.year,
-                    game__start_time__lt=self.start_time
+                    game__start_time__lt=self.start_time,
+                    game__competition__excluded=False
                 )
                 .values('user')
                 .annotate(
@@ -147,7 +148,7 @@ class Game(models.Model):
             standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
         except Standing.DoesNotExist:
             standings = Standing.objects.create(competition=competition, round=1, top_scorer='N/A', most_assists='N/A')
-            
+
         sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
         competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
         top_scorer_list = standings.top_scorer
@@ -157,7 +158,7 @@ class Game(models.Model):
 
         try:
             user_standing_predictions = StandingPrediction.objects.select_related('user').prefetch_related('team_positions__team').filter(competition=competition)
-            table_points = {}            
+            table_points = {}
             for user_standing_prediction in user_standing_predictions:
                 user = user_standing_prediction.user
                 teams = [(standing_prediction_team.position, standing_prediction_team.team) for standing_prediction_team in user_standing_prediction.team_positions.all()]
@@ -165,7 +166,7 @@ class Game(models.Model):
                 user_most_assists = user_standing_prediction.most_assists.split(', ')
                 user_most_points = user_standing_prediction.most_points.split(', ')
                 user_clean_sheets = user_standing_prediction.clean_sheets
-                    
+
                 bet_points = []
                 # for position, team in teams:
                 #     diff = position - competition_standings.index(team) - 1
@@ -186,9 +187,9 @@ class Game(models.Model):
                 #     for user_most_point in user_most_points:
                 #         if user_most_point in most_points_list:
                 #             extra_bet += 6
-         
+
                 # extra_bet += -abs(clean_sheets - user_clean_sheets) if user_clean_sheets and clean_sheets else 0
-                
+
                 table_points[user] = {
                     'points': user_table_points,
                     'extra_bet': extra_bet
