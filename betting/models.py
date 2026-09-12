@@ -145,9 +145,9 @@ class Game(models.Model):
 
         competition = Competition.objects.get(name='Allsvenskan', season=self.start_time.year)
         try:
-            standings = Standing.objects.filter(competition=competition).prefetch_related('team_positions').latest('round')
+            standings = Standing.objects.filter(competition=competition, created__lte=self.start_time).prefetch_related('team_positions').order_by('-created').first()
         except Standing.DoesNotExist:
-            standings = Standing.objects.create(competition=competition, round=1, top_scorer='N/A', most_assists='N/A')
+            standings = Standing.objects.create(competition=competition, round=1, top_scorer='N/A', most_assists='N/A', most_points='N/A', clean_sheets=None)
 
         sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
         competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
@@ -168,27 +168,27 @@ class Game(models.Model):
                 user_clean_sheets = user_standing_prediction.clean_sheets
 
                 bet_points = []
-                # for position, team in teams:
-                #     diff = position - competition_standings.index(team) - 1
-                #     bet_points.append(-abs(diff))
+                for position, team in teams:
+                    diff = position - competition_standings.index(team) - 1
+                    bet_points.append(-abs(diff))
                 user_table_points = sum(bet_points)
 
                 extra_bet = 0
 
-                if user_top_scorers == []:
+                if top_scorer_list and top_scorer_list != '':
                     for user_top_scorer in user_top_scorers:
                         if user_top_scorer in top_scorer_list:
                             extra_bet += 6
-                if user_most_assists == []:
+                if most_assists_list and most_assists_list != '':
                     for user_most_assist in user_most_assists:
                         if user_most_assist in most_assists_list:
                             extra_bet += 16
-                # if user_most_points == []:
-                #     for user_most_point in user_most_points:
-                #         if user_most_point in most_points_list:
-                #             extra_bet += 6
+                if user_most_points and user_most_points != '':
+                    for user_most_point in user_most_points:
+                        if user_most_point in most_points_list:
+                            extra_bet += 6
 
-                # extra_bet += -abs(clean_sheets - user_clean_sheets) if user_clean_sheets and clean_sheets else 0
+                extra_bet += -abs(clean_sheets - user_clean_sheets) if user_clean_sheets and clean_sheets else 0
 
                 table_points[user] = {
                     'points': user_table_points,
