@@ -382,7 +382,7 @@ def standings_list(request):
             if most_point in most_points_list:
                 row['extra_bet'] += 6
         
-        row['extra_bet'] += -abs(clean_sheets - user_clean_sheets) if clean_sheets and user_clean_sheets else 0
+        row['extra_bet'] += -abs(clean_sheets - user_clean_sheets) if clean_sheets and user_clean_sheets != 'N/A' else 0
 
         total_points = row['points'] + row['table_points'] + row['extra_bet']
         row['total_points'] = total_points
