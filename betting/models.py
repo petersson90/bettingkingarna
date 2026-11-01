@@ -144,17 +144,30 @@ class Game(models.Model):
         users = {user.id: user for user in User.objects.all()}
 
         competition = Competition.objects.get(name='Allsvenskan', season=self.start_time.year)
-        try:
-            standings = Standing.objects.filter(competition=competition, created__lte=self.start_time).prefetch_related('team_positions').order_by('-created').first()
-        except Standing.DoesNotExist:
-            standings = Standing.objects.create(competition=competition, round=1, top_scorer='N/A', most_assists='N/A', most_points='N/A', clean_sheets=None)
-
-        sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
-        competition_standings = sorted(competition.teams.all(), key=lambda team: sort_order_list.index(team.id))
-        top_scorer_list = standings.top_scorer
-        most_assists_list = standings.most_assists
-        most_points_list = standings.most_points
-        clean_sheets = standings.clean_sheets
+        # Use the standings snapshot that existed as of this game's kickoff, not just
+        # whatever is most recent right now, so the leaderboard reflects "at the time".
+        standings = (
+            Standing.objects.filter(competition=competition, created__lte=self.start_time)
+            .prefetch_related('team_positions')
+            .order_by('-created')
+            .first()
+        )
+        if standings is None:
+            competition_standings = []
+            top_scorer_list = ''
+            most_assists_list = ''
+            most_points_list = ''
+            clean_sheets = None
+        else:
+            sort_order_list = list(standings.team_positions.values_list('team_id', flat=True).order_by('position'))
+            competition_standings = sorted(
+                competition.teams.all(),
+                key=lambda team: sort_order_list.index(team.id) if team.id in sort_order_list else len(sort_order_list)
+            )
+            top_scorer_list = standings.top_scorer
+            most_assists_list = standings.most_assists
+            most_points_list = standings.most_points
+            clean_sheets = standings.clean_sheets
 
         try:
             user_standing_predictions = StandingPrediction.objects.select_related('user').prefetch_related('team_positions__team').filter(competition=competition)
@@ -169,8 +182,9 @@ class Game(models.Model):
 
                 bet_points = []
                 for position, team in teams:
-                    diff = position - competition_standings.index(team) - 1
-                    bet_points.append(-abs(diff))
+                    if team in competition_standings:
+                        diff = position - competition_standings.index(team) - 1
+                        bet_points.append(-abs(diff))
                 user_table_points = sum(bet_points)
 
                 extra_bet = 0
@@ -501,3 +515,103 @@ class TeamPosition(models.Model):
     def save(self, *args, **kwargs):
         self.clean()  # Validate the team and position before saving
         super(TeamPosition, self).save(*args, **kwargs)
+
+
+# Max points a single Bet can score (see Bet.calculate_points): 3 for the correct
+# outcome, +1 each for exact home/away goals, +1 for the exact result.
+MAX_POINTS_PER_GAME = 6
+
+# Extra-bet bonus for predicting the person with the most points (2026).
+MOST_POINTS_BONUS = 6
+
+
+def calculate_extra_bet(user_most_points, user_clean_sheets, most_points_winner, final_clean_sheets):
+    ''' Extra bet points (2026) for one user in one specific outcome of the season.
+
+    +6 (once) if one of the user's most points picks (comma separated, blank picks are
+    ignored) is found in the winner text, and minus the distance between the user's clean
+    sheets prediction and the final number of clean sheets (not counted while either of
+    them is empty or 0, like the live scoring). Top scorer and most assists are not part
+    of the 2026 extra bet.
+    '''
+    points = 0
+
+    picks = [pick for pick in (user_most_points or '').split(', ') if pick]
+    if any(pick in (most_points_winner or '') for pick in picks):
+        points += MOST_POINTS_BONUS
+
+    if user_clean_sheets and final_clean_sheets:
+        points -= abs(final_clean_sheets - user_clean_sheets)
+
+    return points
+
+
+def calculate_extra_bet_outcomes(predictions, current_clean_sheets, remaining_games):
+    ''' Every joint outcome of the shared extra bets, as one {user: extra points} per outcome.
+
+    predictions: {user: (most_points prediction, clean_sheets prediction)}
+
+    The outcomes are the combinations of
+    - who wins most points: one of the names somebody picked, or somebody nobody picked
+    - the final clean sheets: from the current value up to the current value plus one
+      per remaining game.
+    Because every user is scored against the same outcome, users with the same bet always
+    get the same points and can never end up at their highest/lowest independently.
+    '''
+    names = sorted({
+        pick
+        for most_points, _ in predictions.values()
+        for pick in (most_points or '').split(', ')
+        if pick
+    })
+    winners = names + [None]
+    fewest = current_clean_sheets or 0
+
+    return [
+        {
+            user: calculate_extra_bet(most_points, clean_sheets, winner, final_clean_sheets)
+            for user, (most_points, clean_sheets) in predictions.items()
+        }
+        for winner in winners
+        for final_clean_sheets in range(fewest, fewest + remaining_games + 1)
+    ]
+
+
+def calculate_position_bounds(base_points, extra_outcomes, max_match_points):
+    ''' For each user, the best and worst final pool position still reachable.
+
+    base_points: {user: points that are settled or treated as static (match points so far
+        + table points)}
+    extra_outcomes: list of {user: extra points}, one per joint outcome of the extra bets
+        (see calculate_extra_bet_outcomes)
+    max_match_points: the most any user can still add from the remaining games
+
+    Within an outcome every user's extra points are fixed, so the best case for a user is
+    their highest total against everyone else's lowest, and the worst case the reverse.
+    The best/worst over all outcomes is returned. Match points are still treated as
+    independent between users, exact ties are not counted against a user (the goal
+    difference tiebreak is not modelled) and a tie for most points is not modelled.
+    '''
+    outcome_totals = [
+        {user: base + outcome.get(user, 0) for user, base in base_points.items()}
+        for outcome in (extra_outcomes or [{}])
+    ]
+
+    bounds = {}
+    for user in base_points:
+        best_rank = len(base_points)
+        worst_rank = 1
+
+        for totals in outcome_totals:
+            lowest = totals[user]
+            highest = lowest + max_match_points
+            others = [total for other, total in totals.items() if other != user]
+
+            # Best case: this user ends on their highest, everyone else on their lowest.
+            best_rank = min(best_rank, 1 + sum(1 for total in others if total > highest))
+            # Worst case: this user ends on their lowest, everyone else on their highest.
+            worst_rank = max(worst_rank, 1 + sum(1 for total in others if total + max_match_points > lowest))
+
+        bounds[user] = {'best_rank': best_rank, 'worst_rank': worst_rank}
+
+    return bounds

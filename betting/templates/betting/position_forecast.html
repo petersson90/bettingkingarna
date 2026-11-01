@@ -1,0 +1,69 @@
+{% extends "betting/base.html" %}
+{% block content %}
+<h2>Möjlig slutplacering {{ selected_year }}</h2>
+<p class="text-muted">
+  {% if remaining_games == 1 %}
+  1 match kvar att betta på i säsongen.
+  {% else %}
+  {{ remaining_games }} matcher kvar att betta på i säsongen.
+  {% endif %}
+  Under varje poäng visas vad den kan bli som lägst och som högst. Matchpoäng kan öka med
+  högst 6 per återstående match. Tabellpoängen räknas som de ser ut idag. Extrapoängen
+  beror på vem som får mest poäng (0 eller 6) och på antalet clean sheets, som inte kan bli
+  färre än idag och ökar med högst ett per återstående match. Spelare med samma extra-bet får
+  alltid samma utfall, och det räknas med i den möjliga placeringen.
+</p>
+{% if result %}
+<div class="table-responsive">
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Namn</th>
+        <th scope="col" class="text-end">
+          <abbr class="d-block d-sm-none" title="Matcher">M</abbr
+          ><span class="d-none d-sm-block">Matcher</span>
+        </th>
+        <th scope="col" class="text-end">
+          <abbr class="d-block d-sm-none" title="Tabell">T</abbr
+          ><span class="d-none d-sm-block">Tabell</span>
+        </th>
+        <th scope="col" class="text-end">
+          <abbr class="d-block d-sm-none" title="Extra">X</abbr
+          ><span class="d-none d-sm-block">Extra</span>
+        </th>
+        <th scope="col" class="text-end">
+          <abbr class="d-block d-sm-none" title="Poäng">P</abbr
+          ><span class="d-none d-sm-block">Poäng</span>
+        </th>
+        <th scope="col" class="text-end">
+          <abbr class="d-block d-sm-none" title="Möjlig placering">Pl.</abbr
+          ><span class="d-none d-sm-block">Möjlig placering</span>
+        </th>
+      </tr>
+    </thead>
+    <tbody class="table-group-divider">
+      {% for row in result %}
+      <tr>
+        <td>{{ row.current_position }}</td>
+        <td class="text-nowrap">{{ row.user }}</td>
+        <td class="text-end">{% include "betting/includes/forecast_cell.html" with part=row.match %}</td>
+        <td class="text-end">{% include "betting/includes/forecast_cell.html" with part=row.table %}</td>
+        <td class="text-end">{% include "betting/includes/forecast_cell.html" with part=row.extra %}</td>
+        <td class="text-end">{% include "betting/includes/forecast_cell.html" with part=row.total bold=True %}</td>
+        <td class="text-nowrap text-end">
+          {% if row.best_rank == row.worst_rank %}
+          {{ row.best_rank }}
+          {% else %}
+          {{ row.best_rank }}–{{ row.worst_rank }}
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p>Inga matcher har spelats.</p>
+{% endif %}
+{% endblock %}

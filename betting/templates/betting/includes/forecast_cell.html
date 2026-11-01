@@ -1,0 +1,2 @@
+{% if bold %}<strong>{{ part.current }}</strong>{% else %}{{ part.current }}{% endif %}
+{% if part.lowest != part.highest %}<div class="small text-muted text-nowrap">{{ part.lowest }} till {{ part.highest }}</div>{% endif %}

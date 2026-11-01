@@ -11,7 +11,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django_ical.views import ICalFeed
 from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm, TableBetForm, TeamPositionBetForm
-from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPredictionTeam, Standing, TeamPosition
+from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPredictionTeam, Standing, TeamPosition, MAX_POINTS_PER_GAME, calculate_extra_bet, calculate_extra_bet_outcomes, calculate_position_bounds
 
 DEADLINE_2024 = timezone.make_aware(timezone.datetime(2024, 4, 7, 11))
 DEADLINE_2025 = timezone.make_aware(timezone.datetime(2025, 3, 29, 15))
@@ -424,6 +424,96 @@ def standings_list(request):
 
     context = {'result': result, 'prizes': prizes, 'selected_year': selected_year}
     return render(request, 'betting/standings.html', context)
+
+
+def position_forecast(request):
+    ''' Points per type (match, table, extra) and the best/worst final pool position
+    each user could still reach this season.
+
+    Every point type is shown as {'current', 'lowest', 'highest'}:
+    - match: points so far, plus up to 6 per remaining game
+    - table: static for now (current value both as lowest and highest)
+    - extra: the range over all outcomes of most points and clean sheets
+    The position range uses the joint extra-bet outcomes, so users with the same bet
+    always score the same. This is a simple bound (phase 1), not a probability.
+    '''
+    current_datetime = timezone.now()
+    selected_year = str(current_datetime.year)
+
+    competition = Competition.objects.filter(name='Allsvenskan', season=selected_year, excluded=False).first()
+
+    result = []
+    remaining_games = 0
+    if competition is not None and Game.objects.filter(competition=competition).exists():
+        remaining_games = Game.objects.filter(competition=competition, start_time__gt=current_datetime).count()
+
+        # The leaderboard as of right now. An unsaved game starting now is used so that every
+        # game played so far counts, also the last one of the season.
+        current_standing = Game(competition=competition, start_time=current_datetime).get_leaderboard()
+
+        latest_standing = Standing.objects.filter(competition=competition).order_by('-created').first()
+        current_clean_sheets = latest_standing.clean_sheets if latest_standing else None
+        predictions = {p.user_id: p for p in StandingPrediction.objects.filter(competition=competition)}
+
+        extra_predictions = {}
+        for row in current_standing:
+            prediction = predictions.get(row['user'].id)
+            extra_predictions[row['user']] = (
+                prediction.most_points if prediction else '',
+                prediction.clean_sheets if prediction else None,
+            )
+        extra_outcomes = calculate_extra_bet_outcomes(extra_predictions, current_clean_sheets, remaining_games)
+
+        max_match_points = MAX_POINTS_PER_GAME * remaining_games
+        base_points = {row['user']: row['game_points'] + row['table_points'] for row in current_standing}
+        bounds = calculate_position_bounds(base_points, extra_outcomes, max_match_points)
+
+        for row in current_standing:
+            user = row['user']
+            match = {
+                'current': row['game_points'],
+                'lowest': row['game_points'],
+                'highest': row['game_points'] + max_match_points,
+            }
+            table = {
+                'current': row['table_points'],
+                'lowest': row['table_points'],
+                'highest': row['table_points'],
+            }
+            # The current extra is worked out with the same function as the range (not taken
+            # from the live leaderboard), so it always lies inside the range.
+            extra = {
+                'current': calculate_extra_bet(
+                    *extra_predictions[user],
+                    latest_standing.most_points if latest_standing else '',
+                    current_clean_sheets,
+                ),
+                'lowest': min(outcome[user] for outcome in extra_outcomes),
+                'highest': max(outcome[user] for outcome in extra_outcomes),
+            }
+            total = {
+                'current': match['current'] + table['current'] + extra['current'],
+                'lowest': match['lowest'] + table['lowest'] + extra['lowest'],
+                'highest': match['highest'] + table['highest'] + extra['highest'],
+            }
+            result.append({
+                'user': user,
+                'current_position': row['position'],
+                'match': match,
+                'table': table,
+                'extra': extra,
+                'total': total,
+                'best_rank': bounds[user]['best_rank'],
+                'worst_rank': bounds[user]['worst_rank'],
+            })
+        result.sort(key=lambda x: x['current_position'])
+
+    context = {
+        'result': result,
+        'remaining_games': remaining_games,
+        'selected_year': selected_year,
+    }
+    return render(request, 'betting/position_forecast.html', context)
 
 
 @login_required(login_url='betting:login')
