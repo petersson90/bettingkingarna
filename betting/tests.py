@@ -395,8 +395,12 @@ class CalculateExtraBetTest(TestCase):
     def test_wrong_most_points_pick_gives_nothing(self):
         self.assertEqual(calculate_extra_bet('John Smith', None, 'Jane Doe', 8), 0)
 
-    def test_the_second_pick_also_counts_but_only_one_bonus_is_given(self):
-        self.assertEqual(calculate_extra_bet('John Smith, Jane Doe', None, 'Jane Doe', 8), 6)
+    def test_only_the_first_pick_counts(self):
+        self.assertEqual(calculate_extra_bet('Jane Doe, John Smith', None, 'Jane Doe', 8), 6)
+        self.assertEqual(calculate_extra_bet('John Smith, Jane Doe', None, 'Jane Doe', 8), 0)
+
+    def test_picks_can_be_separated_without_a_space(self):
+        self.assertEqual(calculate_extra_bet('Jane Doe,John Smith', None, 'Jane Doe', 8), 6)
 
     def test_nobody_winning_gives_no_most_points_bonus(self):
         self.assertEqual(calculate_extra_bet('Jane Doe', None, None, 8), 0)
@@ -728,8 +732,8 @@ class PositionForecastSharedBetViewTest(TestCase):
 class CalculateExtraBetWinnerTextTest(TestCase):
     ''' The winner is the text of the current standing, which can hold several names. '''
 
-    def test_two_picks_found_in_a_two_name_winner_text_give_one_bonus(self):
-        self.assertEqual(calculate_extra_bet('Jane Doe, John Smith', None, 'Jane Doe, John Smith', 8), 6)
+    def test_the_first_pick_is_found_in_a_two_name_winner_text(self):
+        self.assertEqual(calculate_extra_bet('Jane Doe, John Smith', None, 'John Smith, Jane Doe', 8), 6)
 
     def test_a_blank_pick_never_matches_a_winner_text(self):
         self.assertEqual(calculate_extra_bet('', None, 'Jane Doe', 8), 0)
@@ -819,3 +823,24 @@ class PositionForecastCurrentExtraViewTest(TestCase):
                 row['total']['current'],
                 row['match']['current'] + row['table']['current'] + row['extra']['current'],
             )
+
+
+class PositionBoundsFromPredictionsTest(TestCase):
+    ''' Outcomes and bounds together for predictions where the text differs but the bet is
+    the same, because only the first name counts for most points.
+    '''
+
+    def test_only_the_first_name_of_each_user_is_a_possible_winner(self):
+        predictions = {'A': ('Jane Doe, John Smith', 7), 'B': ('Jane Doe, Bob Brown', 7)}
+        outcomes = calculate_extra_bet_outcomes(predictions, 5, 1)
+        # Winners: Jane Doe or somebody nobody bet on (2) x clean sheets 5-6 (2).
+        self.assertEqual(len(outcomes), 4)
+        self.assertTrue(all(outcome['A'] == outcome['B'] for outcome in outcomes))
+
+    def test_a_second_name_cannot_let_a_contestant_pass(self):
+        # User 1: 87 match points, User 2: 68, 3 games (18 points) left, 10 clean sheets so far.
+        predictions = {'U1': ('Hugo Bolin, Isak Jansson', 11), 'U2': ('Hugo Bolin, Pontus Wernbloom', 9)}
+        outcomes = calculate_extra_bet_outcomes(predictions, 10, 3)
+        bounds = calculate_position_bounds({'U1': 87, 'U2': 68}, outcomes, 18)
+        self.assertEqual(bounds['U1'], {'best_rank': 1, 'worst_rank': 1})
+        self.assertEqual(bounds['U2'], {'best_rank': 2, 'worst_rank': 2})

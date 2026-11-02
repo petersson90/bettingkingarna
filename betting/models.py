@@ -525,19 +525,26 @@ MAX_POINTS_PER_GAME = 6
 MOST_POINTS_BONUS = 6
 
 
+def first_most_points_pick(user_most_points):
+    ''' The person a user bets on for most points: the first name in the comma separated
+    text. Any further names are not part of the bet. Empty if the user left it blank.
+    '''
+    return (user_most_points or '').split(',')[0].strip()
+
+
 def calculate_extra_bet(user_most_points, user_clean_sheets, most_points_winner, final_clean_sheets):
     ''' Extra bet points (2026) for one user in one specific outcome of the season.
 
-    +6 (once) if one of the user's most points picks (comma separated, blank picks are
-    ignored) is found in the winner text, and minus the distance between the user's clean
-    sheets prediction and the final number of clean sheets (not counted while either of
-    them is empty or 0, like the live scoring). Top scorer and most assists are not part
-    of the 2026 extra bet.
+    +6 if the first name in the user's most points text is found in the winner text (a
+    blank pick never scores), and minus the distance between the user's clean sheets
+    prediction and the final number of clean sheets (not counted while either of them is
+    empty or 0, like the live scoring). Top scorer and most assists are not part of the
+    2026 extra bet.
     '''
     points = 0
 
-    picks = [pick for pick in (user_most_points or '').split(', ') if pick]
-    if any(pick in (most_points_winner or '') for pick in picks):
+    pick = first_most_points_pick(user_most_points)
+    if pick and pick in (most_points_winner or ''):
         points += MOST_POINTS_BONUS
 
     if user_clean_sheets and final_clean_sheets:
@@ -552,18 +559,14 @@ def calculate_extra_bet_outcomes(predictions, current_clean_sheets, remaining_ga
     predictions: {user: (most_points prediction, clean_sheets prediction)}
 
     The outcomes are the combinations of
-    - who wins most points: one of the names somebody picked, or somebody nobody picked
+    - who wins most points: the first name of one of the users' picks, or somebody nobody
+      picked (users whose texts differ after the first name still have the same bet)
     - the final clean sheets: from the current value up to the current value plus one
       per remaining game.
     Because every user is scored against the same outcome, users with the same bet always
     get the same points and can never end up at their highest/lowest independently.
     '''
-    names = sorted({
-        pick
-        for most_points, _ in predictions.values()
-        for pick in (most_points or '').split(', ')
-        if pick
-    })
+    names = sorted({first_most_points_pick(most_points) for most_points, _ in predictions.values()} - {''})
     winners = names + [None]
     fewest = current_clean_sheets or 0
 
