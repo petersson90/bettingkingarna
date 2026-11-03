@@ -4,7 +4,8 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from .models import Bet, Team, Competition, Game, Standing, StandingPrediction, StandingPredictionTeam, TeamPosition, calculate_extra_bet, calculate_extra_bet_outcomes, calculate_position_bounds
+from .models import Bet, Team, Competition, Game, Standing, StandingPrediction, StandingPredictionTeam, TeamPosition, calculate_extra_bet, calculate_extra_bet_outcomes, calculate_position_bounds, get_match_point_histories
+from .probability import points_distribution, calculate_rank_probabilities
 from django.utils import timezone
 import unittest.mock as mock
 
@@ -844,3 +845,141 @@ class PositionBoundsFromPredictionsTest(TestCase):
         bounds = calculate_position_bounds({'U1': 87, 'U2': 68}, outcomes, 18)
         self.assertEqual(bounds['U1'], {'best_rank': 1, 'worst_rank': 1})
         self.assertEqual(bounds['U2'], {'best_rank': 2, 'worst_rank': 2})
+
+
+class PointsDistributionTest(TestCase):
+    def test_no_games_means_no_extra_points(self):
+        self.assertEqual(points_distribution([0, 3, 6], 0), {0: 1.0})
+
+    def test_no_history_means_no_extra_points(self):
+        self.assertEqual(points_distribution([], 3), {0: 1.0})
+
+    def test_one_game_uses_history_frequencies(self):
+        self.assertEqual(points_distribution([0, 3, 3, 6], 1), {0: 0.25, 3: 0.5, 6: 0.25})
+
+    def test_two_games_add_up(self):
+        distribution = points_distribution([0, 6], 2)
+        self.assertEqual(distribution, {0: 0.25, 6: 0.5, 12: 0.25})
+
+    def test_probabilities_sum_to_one(self):
+        self.assertAlmostEqual(sum(points_distribution([0, 1, 3, 4, 6], 5).values()), 1.0)
+
+
+class CalculateRankProbabilitiesTest(TestCase):
+    def test_locked_lead_gives_certain_ranks(self):
+        result = calculate_rank_probabilities({'a': 100, 'b': 0}, {'a': [0, 6], 'b': [0, 6]}, 1)
+        self.assertEqual(result['a']['rank_probabilities'], [1.0, 0.0])
+        self.assertEqual(result['b']['rank_probabilities'], [0.0, 1.0])
+        self.assertEqual(result['b']['expected_rank'], 2.0)
+
+    def test_no_games_left_keeps_todays_order(self):
+        result = calculate_rank_probabilities({'a': 5, 'b': 7}, {'a': [3], 'b': [3]}, 0)
+        self.assertEqual(result['b']['rank_probabilities'], [1.0, 0.0])
+
+    def test_one_game_race_between_equal_users(self):
+        # Level on points, each scores 0 or 6. Ties share first place.
+        result = calculate_rank_probabilities({'a': 10, 'b': 10}, {'a': [0, 6], 'b': [0, 6]}, 1)
+        self.assertEqual(result['a']['rank_probabilities'], [0.75, 0.25])
+        self.assertEqual(result['a']['expected_rank'], 1.25)
+
+    def test_user_without_history_uses_everybodys_history(self):
+        result = calculate_rank_probabilities({'a': 10, 'b': 10}, {'a': [0, 6], 'b': []}, 1)
+        self.assertEqual(result['b']['rank_probabilities'], [0.75, 0.25])
+
+    def test_no_history_at_all_keeps_todays_order(self):
+        result = calculate_rank_probabilities({'a': 5, 'b': 7}, {'a': [], 'b': []}, 2)
+        self.assertEqual(result['a']['rank_probabilities'], [0.0, 1.0])
+
+    def test_three_users_each_row_sums_to_one(self):
+        result = calculate_rank_probabilities(
+            {'a': 20, 'b': 18, 'c': 15}, {'a': [0, 3, 6], 'b': [1, 3, 6], 'c': [0, 6]}, 3
+        )
+        for chances in result.values():
+            self.assertAlmostEqual(sum(chances['rank_probabilities']), 1.0)
+
+    def test_impossible_ranks_have_no_probability(self):
+        # c is 13 behind the leader with 2 games left (max 12): never first.
+        base = {'a': 30, 'b': 29, 'c': 17}
+        histories = {user: [0, 3, 6] for user in base}
+        result = calculate_rank_probabilities(base, histories, 2)
+        self.assertEqual(result['c']['rank_probabilities'][0], 0.0)
+        bounds = calculate_position_bounds(base, [{}], 12)
+        for user, chances in result.items():
+            for rank, probability in enumerate(chances['rank_probabilities'], start=1):
+                if probability > 0:
+                    self.assertTrue(bounds[user]['best_rank'] <= rank <= bounds[user]['worst_rank'])
+
+
+class GetMatchPointHistoriesTest(TestCase):
+    def setUp(self):
+        now = timezone.now()
+        team1 = Team.objects.create(name='Malmö FF')
+        team2 = Team.objects.create(name='IFK Göteborg')
+        competition = Competition.objects.create(name='Allsvenskan', season=now.year)
+        self.games = [
+            Game.objects.create(
+                competition=competition, home_team=team1, away_team=team2,
+                start_time=now - timezone.timedelta(days=days), home_goals=2, away_goals=1,
+            )
+            for days in (3, 2)
+        ]
+        Game.objects.create(
+            competition=competition, home_team=team1, away_team=team2, start_time=now + timezone.timedelta(days=1)
+        )
+        self.now = now
+        self.user = get_user_model().objects.create_user(username='alice', password='testpassword')
+        self.other = get_user_model().objects.create_user(username='bob', password='testpassword')
+
+    def test_missed_bets_count_as_zero_and_future_games_are_left_out(self):
+        Bet(game=self.games[0], user=self.user, home_goals=2, away_goals=1, updated=self.now).save(game_updated=True)
+        histories = get_match_point_histories([self.user.id, self.other.id], self.now.year, self.now)
+        self.assertEqual(sorted(histories[self.user.id]), [0, 6])
+        self.assertEqual(histories[self.other.id], [0, 0])
+
+    def test_no_played_games_gives_empty_histories(self):
+        histories = get_match_point_histories([self.user.id], self.now.year, self.now - timezone.timedelta(days=30))
+        self.assertEqual(histories, {self.user.id: []})
+
+
+class PositionForecastProbabilityViewTest(TestCase):
+    def setUp(self):
+        now = timezone.now()
+        team1 = Team.objects.create(name='Malmö FF')
+        team2 = Team.objects.create(name='IFK Göteborg')
+        self.competition = Competition.objects.create(name='Allsvenskan', season=now.year)
+        self.competition.teams.add(team1, team2)
+        self.now = now
+
+        def game(days, goals):
+            return Game.objects.create(
+                competition=self.competition, home_team=team1, away_team=team2,
+                start_time=now + timezone.timedelta(days=days), home_goals=goals, away_goals=1,
+            )
+        self.game1 = game(-3, 2)
+        self.game2 = game(-2, 2)
+        self.future = game(1, 0)
+        self.alice = get_user_model().objects.create_user(username='alice', password='testpassword')
+        self.bob = get_user_model().objects.create_user(username='bob', password='testpassword')
+        # Alice: exact on game 1 (6 points). Bob: right outcome only (3 points).
+        # Nobody bet on game 2, so it counts as 0 for both.
+        Bet(game=self.game1, user=self.alice, home_goals=2, away_goals=1, updated=now).save(game_updated=True)
+        Bet(game=self.game1, user=self.bob, home_goals=1, away_goals=0, updated=now).save(game_updated=True)
+
+    def _rows(self):
+        response = self.client.get(reverse('betting:position-forecast'))
+        return response, {row['user']: row for row in response.context['probability_rows']}
+
+    def test_missed_bets_count_as_zero_in_the_chances(self):
+        # Alice leads 6-3. Alice scores 6 or 0, Bob 3 or 0, half each. Bob is first (a shared
+        # first place counts) only if he scores 3 and Alice 0: 25 percent.
+        response, rows = self._rows()
+        self.assertEqual([cell['percent'] for cell in rows[self.bob]['cells']], [25, 75])
+        self.assertEqual([cell['percent'] for cell in rows[self.alice]['cells']], [100, 0])
+        self.assertEqual(response.context['rank_numbers'], [1, 2])
+        self.assertContains(response, 'Sannolikhet för slutplacering')
+
+    def test_section_is_hidden_when_no_games_remain(self):
+        self.future.delete()
+        response, rows = self._rows()
+        self.assertEqual(rows, {})
+        self.assertNotContains(response, 'Sannolikhet för slutplacering')

@@ -2,14 +2,10 @@
 {% block content %}
 <h2>Möjlig slutplacering {{ selected_year }}</h2>
 <p class="text-muted">
-  {% if remaining_games == 1 %}
-  1 match kvar att betta på i säsongen.
-  {% else %}
-  {{ remaining_games }} matcher kvar att betta på i säsongen.
-  {% endif %}
+  {{ remaining_games }} match{% if remaining_games != 1 %}er{% endif %} kvar att betta på i säsongen.
   Under varje poäng visas vad den kan bli som lägst och som högst. Matchpoäng kan öka med
   högst 6 per återstående match. Tabellpoängen räknas som de ser ut idag. Extrapoängen
-  beror på vem som får mest poäng (0 eller 6) och på antalet clean sheets, som inte kan bli
+  beror på vem som får mest poäng (0 eller 6, bara det första namnet i tipset räknas) och på antalet clean sheets, som inte kan bli
   färre än idag och ökar med högst ett per återstående match. Spelare med samma extra-bet får
   alltid samma utfall, och det räknas med i den möjliga placeringen.
 </p>
@@ -55,7 +51,7 @@
           {% if row.best_rank == row.worst_rank %}
           {{ row.best_rank }}
           {% else %}
-          {{ row.best_rank }}–{{ row.worst_rank }}
+          {{ row.best_rank }}-{{ row.worst_rank }}
           {% endif %}
         </td>
       </tr>
@@ -63,6 +59,47 @@
     </tbody>
   </table>
 </div>
+{% if probability_rows %}
+<h3 class="mt-4">Sannolikhet för slutplacering</h3>
+<p class="text-muted">
+  Procent chans att sluta på respektive plats. Bara de återstående matchpoängen varierar:
+  varje spelare slumpas fram från sina egna poäng per match i år (missade bets räknas som 0)
+  och spelarna är oberoende av varandra. Tabell- och extrapoäng räknas som idag. Lika poäng
+  delar bästa placering. Målskillnad som särskiljare är inte med. Kolumnerna 1-3, 4-7 och
+  8-10 summerar placeringarna: 1-3 betalar inte, 4-7 betalar och 8-10 betalar och är värd för
+  festen.
+</p>
+<div class="table-responsive">
+  <table class="table table-sm text-center align-middle">
+    <thead>
+      <tr>
+        <th scope="col" class="text-start">Namn</th>
+        {% for number in rank_numbers %}<th scope="col">{{ number }}</th>{% endfor %}
+        {% for group in rank_groups %}
+        <th scope="col" class="{% if forloop.first %}border-start{% endif %}">
+          <abbr title="{{ group.description }}">{{ group.label }}</abbr>
+        </th>
+        {% endfor %}
+        <th scope="col">Snitt</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in probability_rows %}
+      <tr>
+        <td class="text-start text-nowrap">{{ row.user }}</td>
+        {% for cell in row.cells %}
+        <td style="background-color: rgba(13, 110, 253, {{ cell.alpha|stringformat:'s' }})">{% if cell.percent %}{{ cell.percent }}{% endif %}</td>
+        {% endfor %}
+        {% for cell in row.groups %}
+        <td class="{% if forloop.first %}border-start{% endif %}" style="background-color: rgba(13, 110, 253, {{ cell.alpha|stringformat:'s' }})">{% if cell.percent %}{{ cell.percent }}{% endif %}</td>
+        {% endfor %}
+        <td>{{ row.expected_rank|floatformat:1 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
 {% else %}
 <p>Inga matcher har spelats.</p>
 {% endif %}

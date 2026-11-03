@@ -618,3 +618,20 @@ def calculate_position_bounds(base_points, extra_outcomes, max_match_points):
         bounds[user] = {'best_rank': best_rank, 'worst_rank': worst_rank}
 
     return bounds
+
+
+def get_match_point_histories(user_ids, year, until):
+    """Return {user_id: [points per played game]} for the games started before `until`.
+
+    Uses the same games as the leaderboard. A game without a bet counts as 0 points.
+    """
+    game_ids = list(
+        Game.objects.filter(start_time__year=year, start_time__lt=until, competition__excluded=False)
+        .values_list('id', flat=True)
+    )
+    points = {
+        (user_id, game_id): bet_points
+        for user_id, game_id, bet_points in Bet.objects.filter(game_id__in=game_ids)
+        .values_list('user_id', 'game_id', 'points')
+    }
+    return {user_id: [points.get((user_id, game_id), 0) for game_id in game_ids] for user_id in user_ids}

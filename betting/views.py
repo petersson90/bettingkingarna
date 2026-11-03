@@ -11,7 +11,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django_ical.views import ICalFeed
 from accounts.models import CustomUser
 from .forms import TeamForm, GameForm, BetForm, StandingPredictionForm, TableBetForm, TeamPositionBetForm
-from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPredictionTeam, Standing, TeamPosition, MAX_POINTS_PER_GAME, calculate_extra_bet, calculate_extra_bet_outcomes, calculate_position_bounds
+from .models import Team, Competition, Game, Bet, StandingPrediction, StandingPredictionTeam, Standing, TeamPosition, MAX_POINTS_PER_GAME, calculate_extra_bet, calculate_extra_bet_outcomes, calculate_position_bounds, get_match_point_histories
+from .probability import RANK_GROUPS, calculate_rank_probabilities, group_probabilities
 
 DEADLINE_2024 = timezone.make_aware(timezone.datetime(2024, 4, 7, 11))
 DEADLINE_2025 = timezone.make_aware(timezone.datetime(2025, 3, 29, 15))
@@ -443,6 +444,7 @@ def position_forecast(request):
     competition = Competition.objects.filter(name='Allsvenskan', season=selected_year, excluded=False).first()
 
     result = []
+    probability_rows = []
     remaining_games = 0
     if competition is not None and Game.objects.filter(competition=competition).exists():
         remaining_games = Game.objects.filter(competition=competition, start_time__gt=current_datetime).count()
@@ -508,8 +510,34 @@ def position_forecast(request):
             })
         result.sort(key=lambda x: x['current_position'])
 
+        # Phase 2: chance of each final position, from remaining match points only (table and
+        # extra points as they are today). Each user draws from their own points per game.
+        if remaining_games > 0:
+            histories_by_id = get_match_point_histories([row['user'].id for row in current_standing], selected_year, current_datetime)
+            histories = {row['user']: histories_by_id[row['user'].id] for row in current_standing}
+            totals_today = {row['user']: row['total']['current'] for row in result}
+            probabilities = calculate_rank_probabilities(totals_today, histories, remaining_games)
+            for row in result:
+                chances = probabilities[row['user']]
+                probability_rows.append({
+                    'user': row['user'],
+                    'current_position': row['current_position'],
+                    'expected_rank': chances['expected_rank'],
+                    'cells': [
+                        {'percent': round(p * 100), 'alpha': f'{p * 0.7:.2f}'}
+                        for p in chances['rank_probabilities']
+                    ],
+                    'groups': [
+                        {'percent': round(p * 100), 'alpha': f'{p * 0.7:.2f}'}
+                        for p in group_probabilities(chances['rank_probabilities'])
+                    ],
+                })
+
     context = {
         'result': result,
+        'probability_rows': probability_rows,
+        'rank_numbers': list(range(1, len(probability_rows) + 1)),
+        'rank_groups': [{'label': label, 'description': description} for label, description, _, _ in RANK_GROUPS],
         'remaining_games': remaining_games,
         'selected_year': selected_year,
     }
